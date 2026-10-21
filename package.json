@@ -1,0 +1,21 @@
+{
+  "name": "ai-pr-reviewer-monorepo",
+  "version": "1.0.0",
+  "description": "Production-grade, secure, multi-provider AI PR Reviewer with Interactive Dashboard and Verification Engine",
+  "private": true,
+  "workspaces": [
+    "apps/server",
+    "apps/dashboard"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,DASHBOARD\" -c \"cyan,magenta\" \"npm run dev --workspace=apps/server\" \"npm run dev --workspace=apps/dashboard\"",
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:dashboard": "npm run dev --workspace=apps/dashboard",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspace=apps/server",
+    "start": "npm run start --workspace=apps/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
