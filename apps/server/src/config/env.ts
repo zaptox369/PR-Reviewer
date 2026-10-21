@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 dotenv.config();
 
+const defaultPublicUrl = process.env.NODE_ENV === 'production'
+  ? 'https://revai-service.onrender.com'
+  : 'http://localhost:5000';
+
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -15,9 +19,9 @@ const envSchema = z.object({
   GITHUB_OAUTH_CLIENT_ID: z.string().optional().default(''),
   GITHUB_OAUTH_CLIENT_SECRET: z.string().optional().default(''),
   AUTH_SESSION_SECRET: z.string().optional().default(''),
-  APP_BASE_URL: z.string().url().default('http://localhost:5000'),
+  APP_BASE_URL: z.string().url().default(defaultPublicUrl),
   GITHUB_OAUTH_CALLBACK_URL: z.string().url().optional(),
-  DASHBOARD_URL: z.string().url().default('http://localhost:5000'),
+  DASHBOARD_URL: z.string().url().default(defaultPublicUrl),
   LLM_PROVIDER: z.enum(['openai', 'anthropic', 'gemini', 'ollama', 'heuristic-engine']).default('heuristic-engine'),
   LLM_API_KEY: z.string().optional().default(''),
   GEMINI_API_KEY: z.string().optional().default(''),
