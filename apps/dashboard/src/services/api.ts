@@ -8,6 +8,29 @@ const API_BASE = normalizedApiBase
     : `${normalizedApiBase}/api`
   : '/api';
 
+export interface GithubAuthStatus {
+  configured: boolean;
+  user: { id: string; login: string; avatarUrl: string } | null;
+}
+
+export function getGithubSignInUrl(): string {
+  return `${API_BASE}/auth/github`;
+}
+
+export async function fetchGithubAuthStatus(): Promise<GithubAuthStatus> {
+  const res = await fetch(`${API_BASE}/auth/status`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to check GitHub sign-in status');
+  return res.json();
+}
+
+export async function signOutFromGithub(): Promise<void> {
+  const res = await fetch(`${API_BASE}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to sign out');
+}
+
 export async function fetchGithubIntegration(): Promise<{ appConfigured: boolean; installationUrl: string | null }> {
   const res = await fetch(`${API_BASE}/integrations/github`);
   if (!res.ok) throw new Error('Failed to fetch GitHub integration status');

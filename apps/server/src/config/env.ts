@@ -12,6 +12,12 @@ const envSchema = z.object({
   GITHUB_PRIVATE_KEY: z.string().optional().default(''),
   GITHUB_CLIENT_ID: z.string().optional().default(''),
   GITHUB_CLIENT_SECRET: z.string().optional().default(''),
+  GITHUB_OAUTH_CLIENT_ID: z.string().optional().default(''),
+  GITHUB_OAUTH_CLIENT_SECRET: z.string().optional().default(''),
+  AUTH_SESSION_SECRET: z.string().optional().default(''),
+  APP_BASE_URL: z.string().url().default('http://localhost:5000'),
+  GITHUB_OAUTH_CALLBACK_URL: z.string().url().optional(),
+  DASHBOARD_URL: z.string().url().default('http://localhost:5000'),
   LLM_PROVIDER: z.enum(['openai', 'anthropic', 'gemini', 'ollama', 'heuristic-engine']).default('heuristic-engine'),
   LLM_API_KEY: z.string().optional().default(''),
   GEMINI_API_KEY: z.string().optional().default(''),
@@ -39,4 +45,12 @@ if (env.NODE_ENV === 'production') {
   if (!env.GITHUB_WEBHOOK_SECRET || placeholders.includes(env.GITHUB_WEBHOOK_SECRET)) {
     throw new Error('Set a unique GITHUB_WEBHOOK_SECRET before running in production.');
   }
+}
+
+const githubOAuthSettings = [env.GITHUB_OAUTH_CLIENT_ID, env.GITHUB_OAUTH_CLIENT_SECRET];
+if (githubOAuthSettings.some(Boolean) && !githubOAuthSettings.every(Boolean)) {
+  throw new Error('Set GITHUB_OAUTH_CLIENT_ID and GITHUB_OAUTH_CLIENT_SECRET together.');
+}
+if (githubOAuthSettings.every(Boolean) && env.AUTH_SESSION_SECRET.length < 32) {
+  throw new Error('Set AUTH_SESSION_SECRET to a random value of at least 32 characters to enable GitHub sign-in.');
 }

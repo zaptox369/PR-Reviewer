@@ -11,6 +11,12 @@ services:
         value: production
       - key: GITHUB_WEBHOOK_SECRET
         generateValue: true
+      - key: AUTH_SESSION_SECRET
+        generateValue: true
+      - key: APP_BASE_URL
+        value: https://revai-service.onrender.com
+      - key: DASHBOARD_URL
+        value: https://revai-service.onrender.com
       - key: LLM_PROVIDER
         value: heuristic-engine
       - key: STRICT_PRIVACY_MODE

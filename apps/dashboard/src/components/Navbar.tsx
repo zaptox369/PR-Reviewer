@@ -1,6 +1,8 @@
-import React from 'react';
-import { GitMerge, LayoutGrid, GitPullRequest, Terminal, ShieldCheck, Settings, LogIn, Github } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { GitMerge, LayoutGrid, GitPullRequest, Terminal, ShieldCheck, Settings, LogIn, Github, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { fetchGithubAuthStatus, getGithubSignInUrl, signOutFromGithub } from '../services/api.js';
+import type { GithubAuthStatus } from '../services/api.js';
 
 type Tab = 'overview' | 'reviews' | 'sandbox' | 'audit' | 'settings';
 
@@ -20,6 +22,23 @@ const NAV_ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInstallUrl }) => {
+  const [auth, setAuth] = useState<GithubAuthStatus>({ configured: false, user: null });
+
+  useEffect(() => {
+    void fetchGithubAuthStatus()
+      .then(setAuth)
+      .catch((error: unknown) => console.error('Failed to load GitHub sign-in status:', error));
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOutFromGithub();
+      setAuth((current) => ({ ...current, user: null }));
+    } catch (error) {
+      console.error('Failed to sign out from GitHub:', error);
+    }
+  };
+
   return (
     <header className="app-navbar">
       <div className="app-navbar-inner">
@@ -59,10 +78,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInst
               <Github size={14} />
               {appInstallUrl ? 'Connect GitHub' : 'Set up GitHub'}
           </a>
-          <button className="btn-primary" type="button" disabled title="Sign-in is not available yet">
-            <LogIn size={13} />
-            Sign in
-          </button>
+          {auth.user ? (
+            <button className="btn-primary" type="button" onClick={() => void handleSignOut()} title={`Signed in as ${auth.user.login}`}>
+              <LogOut size={13} />
+              Sign out
+            </button>
+          ) : (
+            <a className="btn-primary" href={getGithubSignInUrl()}>
+              <LogIn size={13} />
+              Sign in
+            </a>
+          )}
         </div>
       </div>
     </header>

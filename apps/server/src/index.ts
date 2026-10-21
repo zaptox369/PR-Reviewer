@@ -11,6 +11,7 @@ import { reviewRouter } from './routes/reviews.js';
 import { repoRouter } from './routes/repos.js';
 import { statsRouter } from './routes/stats.js';
 import { auditRouter } from './routes/audit.js';
+import { authRouter } from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +58,12 @@ const webhookLimiter = rateLimit({
 
 app.use('/api', generalLimiter);
 app.use('/api/webhooks', webhookLimiter);
+app.use('/api/auth/github', rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
 
 // 4. Raw Body Buffer Capture for HMAC Signature Verification
 app.use(
@@ -91,6 +98,7 @@ app.get('/api/integrations/github', (_req, res) => {
 
 // 6. Mount Sub-Routers
 app.use('/api/webhooks', webhookRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/repos', repoRouter);
 app.use('/api/stats', statsRouter);

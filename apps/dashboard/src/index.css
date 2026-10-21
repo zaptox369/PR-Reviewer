@@ -384,6 +384,10 @@
   box-shadow: 0 4px 14px rgba(36, 150, 237, 0.2);
 }
 
+.app-nav-action a.btn-primary {
+  text-decoration: none;
+}
+
 .app-nav-action .btn-primary:hover {
   box-shadow: 0 6px 20px rgba(36, 150, 237, 0.28);
 }

@@ -29,6 +29,18 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState<ReviewSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(() => {
+    const error = new URLSearchParams(window.location.search).get('auth_error');
+    if (!error) return null;
+    window.history.replaceState({}, '', window.location.pathname);
+    const messages: Record<string, string> = {
+      not_configured: 'GitHub sign-in is not set up yet. Configure the OAuth client credentials on the server, then try again.',
+      cancelled: 'GitHub sign-in was cancelled.',
+      invalid_state: 'Sign-in could not be verified. Please try again.',
+      failed: 'GitHub sign-in failed. Please try again later.',
+    };
+    return messages[error] ?? 'GitHub sign-in failed. Please try again.';
+  });
 
   const loadAllData = useCallback(async (showLoading = true) => {
     try {
@@ -81,6 +93,12 @@ export function App() {
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSandbox={() => setActiveTab('sandbox')} />
 
       <main className="app-main">
+        {authNotice && (
+          <div className="load-error" role="alert">
+            <span>{authNotice}</span>
+            <button className="btn-ghost" onClick={() => setAuthNotice(null)} aria-label="Dismiss sign-in message">Dismiss</button>
+          </div>
+        )}
         <section className="page-heading">
           <div>
             <div className="eyebrow"><span className="eyebrow-mark" />{currentPage.eyebrow}</div>
