@@ -29,7 +29,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenS
             <GitMerge size={16} color="white" />
           </div>
           <span className="app-brand-name">RevAI</span>
-          <span className="app-brand-badge">beta</span>
         </div>
 
         {/* Nav tabs */}
