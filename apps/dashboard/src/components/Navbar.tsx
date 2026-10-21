@@ -1,5 +1,5 @@
 import React from 'react';
-import { GitMerge, LayoutGrid, GitPullRequest, Terminal, ShieldCheck, Settings, Zap, Github } from 'lucide-react';
+import { GitMerge, LayoutGrid, GitPullRequest, Terminal, ShieldCheck, Settings, LogIn, Github } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type Tab = 'overview' | 'reviews' | 'sandbox' | 'audit' | 'settings';
@@ -7,7 +7,7 @@ type Tab = 'overview' | 'reviews' | 'sandbox' | 'audit' | 'settings';
 interface NavbarProps {
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
-  onOpenSandbox: () => void;
+  onOpenSandbox?: () => void;
   appInstallUrl?: string | null;
 }
 
@@ -19,7 +19,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'settings',  label: 'Settings',   icon: Settings },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenSandbox, appInstallUrl }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInstallUrl }) => {
   return (
     <header className="app-navbar">
       <div className="app-navbar-inner">
@@ -59,9 +59,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenS
               <Github size={14} />
               {appInstallUrl ? 'Connect GitHub' : 'Set up GitHub'}
           </a>
-          <button className="btn-primary" onClick={onOpenSandbox}>
-            <Zap size={13} />
-            Try Sandbox
+          <button className="btn-primary" type="button" disabled title="Sign-in is not available yet">
+            <LogIn size={13} />
+            Sign in
           </button>
         </div>
       </div>
