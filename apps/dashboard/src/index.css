@@ -368,6 +368,9 @@
   color: var(--text-2);
   font-size: 12px;
   font-weight: 600;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
   text-decoration: none;
   transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
 }

@@ -6,7 +6,7 @@ import { ReviewDetailModal } from './components/ReviewDetailModal.js';
 import { SandboxSimulator } from './components/SandboxSimulator.js';
 import { SecurityAuditView } from './components/SecurityAuditView.js';
 import { RepoSettingsView } from './components/RepoSettingsView.js';
-import { fetchReviews, fetchStats, fetchAuditLogs, fetchRepos, rerunReview } from './services/api.js';
+import { fetchReviews, fetchStats, fetchAuditLogs, fetchRepos, fetchGithubIntegration, rerunReview } from './services/api.js';
 import { ReviewSummary, SystemStats, SecurityAuditEntry, RepoSettings } from './types/index.js';
 import { GitMerge, Lock, Shield, Zap } from 'lucide-react';
 
@@ -26,6 +26,7 @@ export function App() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
   const [repos, setRepos] = useState<RepoSettings[]>([]);
+  const [appInstallUrl, setAppInstallUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState<ReviewSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -70,6 +71,12 @@ export function App() {
     return () => window.clearInterval(interval);
   }, [loadAllData]);
 
+  useEffect(() => {
+    void fetchGithubIntegration()
+      .then((integration) => setAppInstallUrl(integration.appConfigured ? integration.installationUrl : null))
+      .catch((error: unknown) => console.error('Failed to load GitHub integration status:', error));
+  }, []);
+
   const handleRerun = async (id: string) => {
     try {
       const updated = await rerunReview(id);
@@ -90,7 +97,7 @@ export function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', width: '100%' }}>
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSandbox={() => setActiveTab('sandbox')} />
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSandbox={() => setActiveTab('sandbox')} appInstallUrl={appInstallUrl} />
 
       <main className="app-main">
         {authNotice && (
