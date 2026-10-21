@@ -5,6 +5,7 @@ import { ReviewSummary, ReviewComment } from '../types/index.js';
 
 interface SandboxSimulatorProps {
   onReviewCreated?: (review: ReviewSummary) => void;
+  canRun?: boolean;
 }
 
 const SEV_STYLES: Record<string, { text: string; bg: string; border: string }> = {
@@ -57,7 +58,7 @@ function CommentCard({ c }: { c: ReviewComment }) {
   );
 }
 
-export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onReviewCreated }) => {
+export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onReviewCreated, canRun = true }) => {
   const [samples, setSamples] = useState<Record<string, { title: string; repo: string; diff: string }>>({});
   const [selectedPreset, setSelectedPreset] = useState<string>('sqliAndSecrets');
   const [repo, setRepo]         = useState('acme-corp/api-gateway');
@@ -95,6 +96,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onReviewCrea
   };
 
   const handleRun = async () => {
+    if (!canRun) { setError('Sign in with Google to run a sandbox review.'); return; }
     if (!diffText.trim()) { setError('Paste a unified git diff to continue.'); return; }
     try {
       setLoading(true); setError(null); setResult(null);
@@ -233,7 +235,13 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onReviewCrea
             </div>
           )}
 
-          <button className="btn-primary" onClick={handleRun} disabled={loading} style={{ alignSelf: 'flex-end', minWidth: 148 }}>
+          {!canRun && (
+            <div className="pipeline-status" role="status" style={{ justifyContent: 'flex-start' }}>
+              Explore the sandbox and sample diff while signed out. Sign in with Google to run a review.
+            </div>
+          )}
+
+          <button className="btn-primary" onClick={handleRun} disabled={loading || !canRun} title={!canRun ? 'Sign in with Google to run a review' : undefined} style={{ alignSelf: 'flex-end', minWidth: 148 }}>
             {loading ? (
               <>
                 <div
@@ -251,7 +259,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ onReviewCrea
             ) : (
               <>
                 <Play size={13} style={{ fill: 'white' }} />
-                Run Review
+                {canRun ? 'Run Review' : 'Sign in to Run'}
               </>
             )}
           </button>

@@ -133,6 +133,12 @@ ${customGuidelines.split('\n').map((l) => `  ${l}`).join('\n')}
         </div>
       </div>
 
+      {!currentRepo && (
+        <div className="pipeline-status" role="status" style={{ justifyContent: 'flex-start' }}>
+          No repositories connected yet. You can preview these rules now; connect GitHub and choose a repository to save them.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Form Column (2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
@@ -296,7 +302,8 @@ ${customGuidelines.split('\n').map((l) => `  ${l}`).join('\n')}
               {saveError && <span role="alert" className="text-xs text-rose-400">{saveError}</span>}
               <button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || !currentRepo}
+                title={!currentRepo ? 'Connect a GitHub repository before saving settings' : undefined}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-400 text-white transition-all shadow-lg shadow-sky-500/20 active:scale-95 disabled:opacity-50"
               >
                 {savedSuccess ? (
@@ -307,7 +314,7 @@ ${customGuidelines.split('\n').map((l) => `  ${l}`).join('\n')}
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    {saving ? 'Saving...' : 'Save Settings'}
+                    {saving ? 'Saving...' : currentRepo ? 'Save Settings' : 'Connect a Repository to Save'}
                   </>
                 )}
               </button>

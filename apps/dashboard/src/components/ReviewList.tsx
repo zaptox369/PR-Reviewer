@@ -7,6 +7,7 @@ interface ReviewListProps {
   loading: boolean;
   onSelectReview: (review: ReviewSummary) => void;
   onRefresh: () => void;
+  canRefresh?: boolean;
 }
 
 const RISK_CONFIG = {
@@ -28,7 +29,7 @@ function SkeletonRow() {
   );
 }
 
-export const ReviewList: React.FC<ReviewListProps> = ({ reviews, loading, onSelectReview, onRefresh }) => {
+export const ReviewList: React.FC<ReviewListProps> = ({ reviews, loading, onSelectReview, onRefresh, canRefresh = true }) => {
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<string>('all');
 
@@ -134,8 +135,9 @@ export const ReviewList: React.FC<ReviewListProps> = ({ reviews, loading, onSele
           <button
             className="btn-ghost"
             onClick={onRefresh}
+            disabled={!canRefresh}
             aria-label="Refresh reviews"
-            title="Refresh reviews"
+            title={canRefresh ? 'Refresh reviews' : 'Sign in to load reviews'}
             style={{ height: 32, padding: '0 10px', fontSize: 12 }}
           >
             <RotateCcw size={13} />
@@ -150,7 +152,9 @@ export const ReviewList: React.FC<ReviewListProps> = ({ reviews, loading, onSele
         ) : filtered.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
             {reviews.length === 0
-              ? 'No reviews yet — connect GitHub or run a review from the Sandbox.'
+              ? canRefresh
+                ? 'No reviews yet — connect GitHub or run a review from the Sandbox.'
+                : 'No reviews yet — sign in and connect GitHub or run a review from the Sandbox.'
               : (
                 <>
                   <p style={{ margin: '0 0 10px' }}>No reviews match your search or risk filter.</p>

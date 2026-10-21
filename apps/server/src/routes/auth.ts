@@ -66,6 +66,11 @@ function verifyToken(token: string | null): JwtPayload | null {
 }
 
 export function requireSession(req: Request, res: Response, next: NextFunction): void {
+  // The sandbox presets are public demo content; only review execution requires a session.
+  if (req.method === 'GET' && req.path === '/samples') {
+    next();
+    return;
+  }
   const session = verifyToken(readCookie(req, SESSION_COOKIE));
   if (!session || typeof session.sub !== 'string') {
     res.status(401).json({ error: 'Sign in is required.' });

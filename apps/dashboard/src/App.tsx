@@ -75,10 +75,11 @@ export function App() {
         setSignedIn(Boolean(user));
         setAuthReady(true);
         if (user) void loadAllData();
+        else setLoading(false);
       })
       .catch((error: unknown) => {
         console.error('Failed to check sign-in status:', error);
-        if (active) setAuthReady(true);
+        if (active) { setAuthReady(true); setLoading(false); }
       });
     return () => { active = false; };
   }, [loadAllData]);
@@ -163,9 +164,9 @@ export function App() {
           </div>
         )}
 
-        {signedIn && activeTab === 'overview' && (
+        {activeTab === 'overview' && (
           <>
-            {!loadError && (
+            {signedIn && !loadError && (
               <div className="pipeline-status">
                 <div className="pipeline-status-items">
                   <div className="pipeline-status-item">
@@ -190,19 +191,19 @@ export function App() {
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <StatsCards stats={stats} loading={loading} />
-              <ReviewList reviews={reviews} loading={loading} onSelectReview={setSelectedReview} onRefresh={() => void loadAllData()} />
+              <ReviewList reviews={reviews} loading={loading} onSelectReview={setSelectedReview} onRefresh={() => void loadAllData()} canRefresh={signedIn} />
             </div>
           </>
         )}
 
-        {signedIn && activeTab === 'reviews' && (
-          <ReviewList reviews={reviews} loading={loading} onSelectReview={setSelectedReview} onRefresh={() => void loadAllData()} />
+        {activeTab === 'reviews' && (
+          <ReviewList reviews={reviews} loading={loading} onSelectReview={setSelectedReview} onRefresh={() => void loadAllData()} canRefresh={signedIn} />
         )}
-        {signedIn && activeTab === 'sandbox' && <SandboxSimulator onReviewCreated={handleReviewCreated} />}
-        {signedIn && activeTab === 'audit' && (
-          <SecurityAuditView logs={auditLogs} loading={loading} onRefresh={() => void loadAllData()} />
+        {activeTab === 'sandbox' && <SandboxSimulator onReviewCreated={handleReviewCreated} canRun={signedIn} />}
+        {activeTab === 'audit' && (
+          <SecurityAuditView logs={auditLogs} loading={loading} onRefresh={() => void loadAllData()} canRefresh={signedIn} />
         )}
-        {signedIn && activeTab === 'settings' && <RepoSettingsView repos={repos} onRefresh={() => void loadAllData()} />}
+        {activeTab === 'settings' && <RepoSettingsView repos={repos} onRefresh={() => void loadAllData()} />}
       </main>
 
       <footer className="app-footer" style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1280, margin: '0 auto' }}>

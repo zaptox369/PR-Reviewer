@@ -6,6 +6,7 @@ interface SecurityAuditViewProps {
   logs: SecurityAuditEntry[];
   loading: boolean;
   onRefresh: () => void;
+  canRefresh?: boolean;
 }
 
 const SEV_CONFIG = {
@@ -28,7 +29,7 @@ const EVENT_LABELS: Record<string, string> = {
   github_review_failed:   'GitHub Review Failed',
 };
 
-export const SecurityAuditView: React.FC<SecurityAuditViewProps> = ({ logs, loading, onRefresh }) => {
+export const SecurityAuditView: React.FC<SecurityAuditViewProps> = ({ logs, loading, onRefresh, canRefresh = true }) => {
   const [sev, setSev] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -97,7 +98,7 @@ export const SecurityAuditView: React.FC<SecurityAuditViewProps> = ({ logs, load
               {s === 'all' ? 'All' : s}
             </button>
           ))}
-          <button className="btn-ghost" onClick={onRefresh} style={{ height: 32, padding: '0 10px', fontSize: 12 }}>
+          <button className="btn-ghost" onClick={onRefresh} disabled={!canRefresh} title={canRefresh ? 'Refresh audit log' : 'Sign in to load audit data'} style={{ height: 32, padding: '0 10px', fontSize: 12 }}>
             <RotateCcw size={13} />
           </button>
         </div>
@@ -119,7 +120,7 @@ export const SecurityAuditView: React.FC<SecurityAuditViewProps> = ({ logs, load
           : filtered.length === 0
           ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
-              No audit entries match your filter.
+              {logs.length === 0 ? 'No audit entries yet.' : 'No audit entries match your filter.'}
             </div>
           )
           : filtered.map((log) => {
