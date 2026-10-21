@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { env } from '../config/env.js';
 
@@ -24,13 +24,17 @@ function oauthConfigured(): boolean {
   );
 }
 
-function cookieOptions(maxAge: number, path: string): string {
-  const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
-  return `Path=${path}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
+function googleOAuthConfigured(): boolean {
+  return Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.AUTH_SESSION_SECRET.length >= 32);
 }
 
-function clearCookie(res: Response, name: string, path: string): void {
-  res.append('Set-Cookie', `${name}=; ${cookieOptions(0, path)}`);
+function cookieOptions(maxAge: number, path: string, sameSite: 'Lax' | 'None' = 'Lax'): string {
+  const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `Path=${path}; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${secure}`;
+}
+
+function clearCookie(res: Response, name: string, path: string, sameSite: 'Lax' | 'None' = 'Lax'): void {
+  res.append('Set-Cookie', `${name}=; ${cookieOptions(0, path, sameSite)}`);
 }
 
 function readCookie(req: Request, name: string): string | null {
@@ -61,17 +65,74 @@ function verifyToken(token: string | null): JwtPayload | null {
   }
 }
 
+export function requireSession(req: Request, res: Response, next: NextFunction): void {
+  const session = verifyToken(readCookie(req, SESSION_COOKIE));
+  if (!session || typeof session.sub !== 'string') {
+    res.status(401).json({ error: 'Sign in is required.' });
+    return;
+  }
+  next();
+}
+
 authRouter.get('/status', (req: Request, res: Response) => {
   const session = verifyToken(readCookie(req, SESSION_COOKIE));
   const user = session && typeof session.sub === 'string' &&
     typeof session.login === 'string' && typeof session.avatarUrl === 'string'
     ? { id: session.sub, login: session.login, avatarUrl: session.avatarUrl }
     : null;
-  res.setHeader('Cache-Control', 'no-store');
-  res.json({ configured: oauthConfigured(), user });
+  res.json({ configured: oauthConfigured() || googleOAuthConfigured(), user });
 });
 
-authRouter.get('/github', (_req: Request, res: Response) => {
+authRouter.get('/google', (req: Request, res: Response) => {
+  if (!googleOAuthConfigured()) {
+    redirectToDashboard(res, 'not_configured');
+    return;
+  }
+  const state = randomBytes(32).toString('hex');
+  const stateToken = jwt.sign({ state }, env.AUTH_SESSION_SECRET, { expiresIn: STATE_MAX_AGE_SECONDS });
+  res.append('Set-Cookie', `${STATE_COOKIE}=${encodeURIComponent(stateToken)}; ${cookieOptions(STATE_MAX_AGE_SECONDS, '/api/auth/google/callback')}`);
+  const callbackUrl = env.GOOGLE_OAUTH_CALLBACK_URL ?? `${env.APP_BASE_URL.replace(/\/+$/, '')}/api/auth/google/callback`;
+  const authorizationUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authorizationUrl.searchParams.set('client_id', env.GOOGLE_OAUTH_CLIENT_ID);
+  authorizationUrl.searchParams.set('redirect_uri', callbackUrl);
+  authorizationUrl.searchParams.set('response_type', 'code');
+  authorizationUrl.searchParams.set('scope', 'openid email profile');
+  authorizationUrl.searchParams.set('state', state);
+  res.redirect(authorizationUrl.toString());
+});
+
+authRouter.get('/google/callback', async (req: Request, res: Response) => {
+  const stateCookie = readCookie(req, STATE_COOKIE);
+  clearCookie(res, STATE_COOKIE, '/api/auth/google/callback');
+  if (req.query.error) { redirectToDashboard(res, 'cancelled'); return; }
+  const statePayload = verifyToken(stateCookie);
+  if (typeof req.query.code !== 'string' || typeof req.query.state !== 'string' || typeof statePayload?.state !== 'string') {
+    redirectToDashboard(res, 'invalid_state'); return;
+  }
+  const expected = Buffer.from(statePayload.state);
+  const actual = Buffer.from(req.query.state);
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) { redirectToDashboard(res, 'invalid_state'); return; }
+  try {
+    const callbackUrl = env.GOOGLE_OAUTH_CALLBACK_URL ?? `${env.APP_BASE_URL.replace(/\/+$/, '')}/api/auth/google/callback`;
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: new URLSearchParams({ code: req.query.code, client_id: env.GOOGLE_OAUTH_CLIENT_ID, client_secret: env.GOOGLE_OAUTH_CLIENT_SECRET, redirect_uri: callbackUrl, grant_type: 'authorization_code' }),
+    });
+    const tokenData = await tokenResponse.json() as { access_token?: string };
+    if (!tokenResponse.ok || !tokenData.access_token) throw new Error('Google token exchange failed.');
+    const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: `Bearer ${tokenData.access_token}` } });
+    const profile = await profileResponse.json() as { id?: string; email?: string; name?: string; picture?: string; verified_email?: boolean };
+    if (!profileResponse.ok || !profile.id || !profile.email || profile.verified_email !== true) throw new Error('Google returned an invalid or unverified profile.');
+    const sessionToken = jwt.sign({ login: profile.name || profile.email, avatarUrl: profile.picture || '' }, env.AUTH_SESSION_SECRET, { subject: `google:${profile.id}`, expiresIn: SESSION_MAX_AGE_SECONDS });
+    res.append('Set-Cookie', `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(SESSION_MAX_AGE_SECONDS, '/', env.NODE_ENV === 'production' ? 'None' : 'Lax')}`);
+    redirectToDashboard(res);
+  } catch (error) {
+    console.error('[Auth] Google sign-in failed:', error);
+    redirectToDashboard(res, 'failed');
+  }
+});
+
+authRouter.get('/github', (req: Request, res: Response) => {
   if (!oauthConfigured()) {
     redirectToDashboard(res, 'not_configured');
     return;
@@ -174,7 +235,8 @@ authRouter.get('/github/callback', async (req: Request, res: Response) => {
       'Set-Cookie',
       `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(
         SESSION_MAX_AGE_SECONDS,
-        '/'
+        '/',
+        env.NODE_ENV === 'production' ? 'None' : 'Lax'
       )}`
     );
     redirectToDashboard(res);
@@ -185,6 +247,6 @@ authRouter.get('/github/callback', async (req: Request, res: Response) => {
 });
 
 authRouter.post('/logout', (_req: Request, res: Response) => {
-  clearCookie(res, SESSION_COOKIE, '/');
+  clearCookie(res, SESSION_COOKIE, '/', env.NODE_ENV === 'production' ? 'None' : 'Lax');
   res.status(204).end();
 });

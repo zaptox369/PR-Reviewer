@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { GitMerge, LayoutGrid, GitPullRequest, Terminal, ShieldCheck, Settings, LogIn, Github, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { fetchGithubAuthStatus, getGithubSignInUrl, signOutFromGithub } from '../services/api.js';
-import type { GithubAuthStatus } from '../services/api.js';
+import { fetchAuthStatus, getGoogleSignInUrl, signOut } from '../services/api.js';
+import type { AuthStatus } from '../services/api.js';
 
 type Tab = 'overview' | 'reviews' | 'sandbox' | 'audit' | 'settings';
 
@@ -22,20 +22,20 @@ const NAV_ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInstallUrl }) => {
-  const [auth, setAuth] = useState<GithubAuthStatus>({ configured: false, user: null });
+  const [auth, setAuth] = useState<AuthStatus>({ configured: false, user: null });
 
   useEffect(() => {
-    void fetchGithubAuthStatus()
+    void fetchAuthStatus()
       .then(setAuth)
-      .catch((error: unknown) => console.error('Failed to load GitHub sign-in status:', error));
+      .catch((error: unknown) => console.error('Failed to load sign-in status:', error));
   }, []);
 
   const handleSignOut = async () => {
     try {
-      await signOutFromGithub();
+      await signOut();
       setAuth((current) => ({ ...current, user: null }));
     } catch (error) {
-      console.error('Failed to sign out from GitHub:', error);
+      console.error('Failed to sign out:', error);
     }
   };
 
@@ -84,9 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInst
               Sign out
             </button>
           ) : (
-            <a className="btn-primary" href={getGithubSignInUrl()}>
+            <a className="btn-primary" href={getGoogleSignInUrl()}>
               <LogIn size={13} />
-              Sign in
+              Sign in with Google
             </a>
           )}
         </div>

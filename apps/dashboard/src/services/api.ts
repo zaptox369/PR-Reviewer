@@ -8,22 +8,22 @@ const API_BASE = normalizedApiBase
     : `${normalizedApiBase}/api`
   : '/api';
 
-export interface GithubAuthStatus {
+export interface AuthStatus {
   configured: boolean;
   user: { id: string; login: string; avatarUrl: string } | null;
 }
 
-export function getGithubSignInUrl(): string {
-  return `${API_BASE}/auth/github`;
+export function getGoogleSignInUrl(): string {
+  return `${API_BASE}/auth/google`;
 }
 
-export async function fetchGithubAuthStatus(): Promise<GithubAuthStatus> {
+export async function fetchAuthStatus(): Promise<AuthStatus> {
   const res = await fetch(`${API_BASE}/auth/status`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to check GitHub sign-in status');
+  if (!res.ok) throw new Error('Failed to check sign-in status');
   return res.json();
 }
 
-export async function signOutFromGithub(): Promise<void> {
+export async function signOut(): Promise<void> {
   const res = await fetch(`${API_BASE}/auth/logout`, {
     method: 'POST',
     credentials: 'include',

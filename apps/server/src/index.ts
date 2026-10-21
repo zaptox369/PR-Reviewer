@@ -11,7 +11,7 @@ import { reviewRouter } from './routes/reviews.js';
 import { repoRouter } from './routes/repos.js';
 import { statsRouter } from './routes/stats.js';
 import { auditRouter } from './routes/audit.js';
-import { authRouter } from './routes/auth.js';
+import { authRouter, requireSession } from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +99,10 @@ app.get('/api/integrations/github', (_req, res) => {
 // 6. Mount Sub-Routers
 app.use('/api/webhooks', webhookRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/reviews', requireSession);
+app.use('/api/repos', requireSession);
+app.use('/api/stats', requireSession);
+app.use('/api/audit', requireSession);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/repos', repoRouter);
 app.use('/api/stats', statsRouter);

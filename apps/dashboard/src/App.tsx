@@ -34,12 +34,12 @@ export function App() {
     if (!error) return null;
     window.history.replaceState({}, '', window.location.pathname);
     const messages: Record<string, string> = {
-      not_configured: 'GitHub sign-in is not set up yet. Configure the OAuth client credentials on the server, then try again.',
-      cancelled: 'GitHub sign-in was cancelled.',
+      not_configured: 'Google sign-in is not set up yet. Configure the OAuth client credentials on the server, then try again.',
+      cancelled: 'Google sign-in was cancelled.',
       invalid_state: 'Sign-in could not be verified. Please try again.',
-      failed: 'GitHub sign-in failed. Please try again later.',
+      failed: 'Google sign-in failed. Please try again later.',
     };
-    return messages[error] ?? 'GitHub sign-in failed. Please try again.';
+    return messages[error] ?? 'Google sign-in failed. Please try again.';
   });
 
   const loadAllData = useCallback(async (showLoading = true) => {
