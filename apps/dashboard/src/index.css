@@ -384,6 +384,14 @@
   box-shadow: 0 4px 14px rgba(36, 150, 237, 0.2);
 }
 
+.account-name {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-nav-action a.btn-primary {
   text-decoration: none;
 }
@@ -1149,6 +1157,11 @@ textarea:focus-visible {
   .app-nav-action .btn-primary {
     padding: 8px 10px;
     font-size: 0;
+  }
+
+  .app-nav-action .btn-primary .account-name {
+    max-width: 78px;
+    font-size: 11px;
   }
 
   .app-install-link {

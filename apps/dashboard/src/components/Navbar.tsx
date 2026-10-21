@@ -79,9 +79,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInst
               {appInstallUrl ? 'Connect GitHub' : 'Set up GitHub'}
           </a>
           {auth.user ? (
-            <button className="btn-primary" type="button" onClick={() => void handleSignOut()} title={`Signed in as ${auth.user.login}`}>
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => void handleSignOut()}
+              title={`Signed in as ${auth.user.login}. Click to sign out.`}
+              aria-label={`Sign out ${auth.user.login}`}
+            >
+              <span className="account-name">{auth.user.login}</span>
               <LogOut size={13} />
-              Sign out
             </button>
           ) : (
             <a className="btn-primary" href={getGoogleSignInUrl()}>
