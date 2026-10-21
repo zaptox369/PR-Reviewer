@@ -6,7 +6,7 @@ import { ReviewDetailModal } from './components/ReviewDetailModal.js';
 import { SandboxSimulator } from './components/SandboxSimulator.js';
 import { SecurityAuditView } from './components/SecurityAuditView.js';
 import { RepoSettingsView } from './components/RepoSettingsView.js';
-import { fetchReviews, fetchStats, fetchAuditLogs, fetchRepos, fetchGithubIntegration, rerunReview } from './services/api.js';
+import { fetchAuthStatus, fetchReviews, fetchStats, fetchAuditLogs, fetchRepos, fetchGithubIntegration, rerunReview } from './services/api.js';
 import { ReviewSummary, SystemStats, SecurityAuditEntry, RepoSettings } from './types/index.js';
 import { GitMerge, Lock, Shield, Zap } from 'lucide-react';
 
@@ -27,6 +27,8 @@ export function App() {
   const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
   const [repos, setRepos] = useState<RepoSettings[]>([]);
   const [appInstallUrl, setAppInstallUrl] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState<ReviewSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -66,10 +68,26 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void loadAllData();
+    let active = true;
+    void fetchAuthStatus()
+      .then(({ user }) => {
+        if (!active) return;
+        setSignedIn(Boolean(user));
+        setAuthReady(true);
+        if (user) void loadAllData();
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to check sign-in status:', error);
+        if (active) setAuthReady(true);
+      });
+    return () => { active = false; };
+  }, [loadAllData]);
+
+  useEffect(() => {
+    if (!signedIn) return;
     const interval = window.setInterval(() => void loadAllData(false), 15000);
     return () => window.clearInterval(interval);
-  }, [loadAllData]);
+  }, [signedIn, loadAllData]);
 
   useEffect(() => {
     void fetchGithubIntegration()
@@ -93,11 +111,21 @@ export function App() {
     void loadAllData();
   };
 
+  const handleSignedOut = () => {
+    setSignedIn(false);
+    setLoadError(null);
+    setReviews([]);
+    setStats(null);
+    setAuditLogs([]);
+    setRepos([]);
+    setSelectedReview(null);
+  };
+
   const currentPage = pageMeta[activeTab];
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', width: '100%' }}>
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSandbox={() => setActiveTab('sandbox')} appInstallUrl={appInstallUrl} />
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} onOpenSandbox={() => setActiveTab('sandbox')} appInstallUrl={appInstallUrl} onSignedOut={handleSignedOut} />
 
       <main className="app-main">
         {authNotice && (
@@ -122,14 +150,20 @@ export function App() {
           </div>
         </section>
 
-        {loadError && (
+        {authReady && !signedIn && (
+          <div className="pipeline-status" role="status" style={{ justifyContent: 'flex-start', color: 'var(--text-2)' }}>
+            Sign in with Google to load your reviews, repository settings, and audit data.
+          </div>
+        )}
+
+        {signedIn && loadError && (
           <div className="load-error" role="alert">
             <span>{loadError}</span>
             <button className="btn-ghost" onClick={() => void loadAllData()} disabled={loading}>Retry</button>
           </div>
         )}
 
-        {activeTab === 'overview' && (
+        {signedIn && activeTab === 'overview' && (
           <>
             {!loadError && (
               <div className="pipeline-status">
@@ -161,14 +195,14 @@ export function App() {
           </>
         )}
 
-        {activeTab === 'reviews' && (
+        {signedIn && activeTab === 'reviews' && (
           <ReviewList reviews={reviews} loading={loading} onSelectReview={setSelectedReview} onRefresh={() => void loadAllData()} />
         )}
-        {activeTab === 'sandbox' && <SandboxSimulator onReviewCreated={handleReviewCreated} />}
-        {activeTab === 'audit' && (
+        {signedIn && activeTab === 'sandbox' && <SandboxSimulator onReviewCreated={handleReviewCreated} />}
+        {signedIn && activeTab === 'audit' && (
           <SecurityAuditView logs={auditLogs} loading={loading} onRefresh={() => void loadAllData()} />
         )}
-        {activeTab === 'settings' && <RepoSettingsView repos={repos} onRefresh={() => void loadAllData()} />}
+        {signedIn && activeTab === 'settings' && <RepoSettingsView repos={repos} onRefresh={() => void loadAllData()} />}
       </main>
 
       <footer className="app-footer" style={{ borderTop: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 1280, margin: '0 auto' }}>
@@ -181,7 +215,7 @@ export function App() {
         </div>
       </footer>
 
-      {selectedReview && (
+      {signedIn && selectedReview && (
         <ReviewDetailModal
           review={selectedReview}
           onClose={() => setSelectedReview(null)}

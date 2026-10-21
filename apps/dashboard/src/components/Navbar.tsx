@@ -11,6 +11,7 @@ interface NavbarProps {
   setActiveTab: (tab: Tab) => void;
   onOpenSandbox?: () => void;
   appInstallUrl?: string | null;
+  onSignedOut?: () => void;
 }
 
 const NAV_ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
@@ -21,7 +22,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'settings',  label: 'Settings',   icon: Settings },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInstallUrl }) => {
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInstallUrl, onSignedOut }) => {
   const [auth, setAuth] = useState<AuthStatus>({ configured: false, user: null });
   const [showGithubGuide, setShowGithubGuide] = useState(false);
 
@@ -35,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, appInst
     try {
       await signOut();
       setAuth((current) => ({ ...current, user: null }));
+      onSignedOut?.();
     } catch (error) {
       console.error('Failed to sign out:', error);
     }
