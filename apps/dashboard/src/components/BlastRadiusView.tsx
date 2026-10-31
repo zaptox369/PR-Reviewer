@@ -83,31 +83,10 @@ export const BlastRadiusView: React.FC = () => {
   const activeNode = currentScenario.nodes.find((n) => n.id === activeNodeId) || currentScenario.nodes[0];
 
   return (
-    <div className="space-y-6 slide-up">
-      {/* Hero Strip */}
-      <div className="surface p-6 bg-gradient-to-r from-ink via-ink-card to-ultra/20 border-line-bright">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="eyebrow">
-              <span className="eyebrow-mark" />
-              Propagation Engine
-            </div>
-            <h2 className="display text-2xl md:text-3xl text-white font-extrabold tracking-tight">
-              PR Blast Radius & Propagation Map
-            </h2>
-            <p className="mt-2 text-sm text-ice/75 max-w-2xl">
-              Trace code shocks across your infrastructure before committing to main. Inspect how diff regressions propagate from endpoints to databases and microservices.
-            </p>
-          </div>
-
-          <div className="px-4 py-2 rounded-full bg-ember/15 border border-ember/30 text-ember text-sm font-bold flex items-center gap-2 shrink-0">
-            <Flame size={16} />
-            {currentScenario.shockMagnitude}
-          </div>
-        </div>
-
-        {/* Scenario Selection Pills */}
-        <div className="mt-6 pt-5 border-t border-line flex flex-wrap items-center gap-2">
+    <div className="space-y-4 slide-up">
+      {/* Scenario Selection Control Strip */}
+      <div className="surface p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-ice/60 uppercase tracking-wider mr-2">
             Simulate shock scenario:
           </span>
@@ -137,10 +116,15 @@ export const BlastRadiusView: React.FC = () => {
             );
           })}
         </div>
+
+        <div className="px-3.5 py-1.5 rounded-full bg-ember/15 border border-ember/30 text-ember text-xs font-bold flex items-center gap-2 shrink-0">
+          <Flame size={14} />
+          {currentScenario.shockMagnitude}
+        </div>
       </div>
 
       {/* Main Interactive Map & Node Detail Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Interactive SVG Topology Map */}
         <div className="lg:col-span-8 surface p-6 relative overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
@@ -155,7 +139,7 @@ export const BlastRadiusView: React.FC = () => {
 
           {/* SVG Diagram Canvas */}
           <div className="relative py-8 flex items-center justify-center">
-            <svg viewBox="0 0 700 280" className="w-full h-auto select-none max-w-2xl">
+            <svg viewBox="0 0 700 280" className="w-full h-auto select-none">
               <defs>
                 <linearGradient id="gradUltra" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#1a2fd4" stopOpacity="0.8" />
@@ -191,7 +175,7 @@ export const BlastRadiusView: React.FC = () => {
               <path
                 d="M 340 90 Q 450 140 560 200"
                 fill="none"
-                stroke={currentScenario.nodes[3].status === 'critical' ? '#ff5a2c' : 'rgba(203, 216, 255, 0.3)'}
+                stroke={currentScenario.nodes[3].status === 'critical' ? '#ff5a2c' : 'rgba(255, 255, 255, 0.2)'}
                 strokeWidth="2"
                 className="opacity-50"
               />
@@ -225,7 +209,7 @@ export const BlastRadiusView: React.FC = () => {
                   x="340" 
                   y="101" 
                   textAnchor="middle" 
-                  fill={currentScenario.nodes[1].status === 'critical' ? '#ff5a2c' : '#cbd8ff'} 
+                  fill={currentScenario.nodes[1].status === 'critical' ? '#ff5a2c' : '#d4d4d8'} 
                   fontSize="8" 
                   fontWeight="600"
                 >
@@ -273,7 +257,7 @@ export const BlastRadiusView: React.FC = () => {
                   strokeWidth="2" 
                 />
                 <text x="340" y="188" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="600">REDIS</text>
-                <text x="340" y="200" textAnchor="middle" fill="#cbd8ff" fontSize="8">CACHE</text>
+                <text x="340" y="200" textAnchor="middle" fill="#d4d4d8" fontSize="8">CACHE</text>
               </g>
 
               {/* Node 5: External API */}
@@ -290,7 +274,7 @@ export const BlastRadiusView: React.FC = () => {
                   strokeWidth="2" 
                 />
                 <text x="560" y="198" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="600">EXTERNAL</text>
-                <text x="560" y="210" textAnchor="middle" fill="#cbd8ff" fontSize="8">WEBHOOK</text>
+                <text x="560" y="210" textAnchor="middle" fill="#d4d4d8" fontSize="8">WEBHOOK</text>
               </g>
             </svg>
           </div>
@@ -390,4 +374,3 @@ export const BlastRadiusView: React.FC = () => {
     </div>
   );
 };
-

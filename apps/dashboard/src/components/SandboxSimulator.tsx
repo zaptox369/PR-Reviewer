@@ -145,46 +145,12 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Flight Simulator Hero Strip - Crisis Twin Inspired */}
-      <div className="surface p-6 relative overflow-hidden bg-gradient-to-r from-ink via-ink-card to-ultra/20 border-line-bright">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="eyebrow">
-              <span className="eyebrow-mark" />
-              PR Flight Simulator
-            </div>
-            <h2 className="display text-2xl md:text-3xl text-white font-extrabold tracking-tight">
-              Rehearse the merge before it breaks production.
-            </h2>
-            <p className="mt-2 text-sm text-ice/75 max-w-2xl">
-              Inject a code shock, inspect blast radius propagation, and watch three AI reviewers (Pragmatist Bull, Red Team Bear, and Security Auditor) argue over the pull request.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleRunSimulation}
-            disabled={loading}
-            className="btn-ember shrink-0 text-sm py-3 px-6 shadow-glow-ember font-bold"
-          >
-            {loading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Simulating Shock...
-              </>
-            ) : (
-              <>
-                <Flame size={16} />
-                Run Simulator
-              </>
-            )}
-          </button>
-        </div>
-
+      {/* Simulation Control Bar */}
+      <div className="surface p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         {/* Shock Selection Pills */}
-        <div className="mt-6 pt-5 border-t border-line flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-ice/60 uppercase tracking-wider mr-2">
-            Try a shock:
+            Try a shock scenario:
           </span>
           {SHOCK_PRESETS.map((p) => {
             const isSelected = selectedShock === p.id;
@@ -209,6 +175,25 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
             );
           })}
         </div>
+
+        <button
+          type="button"
+          onClick={handleRunSimulation}
+          disabled={loading}
+          className="btn-ember shrink-0 text-sm py-2.5 px-6 shadow-glow-ember font-bold flex items-center gap-2"
+        >
+          {loading ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Simulating Shock...
+            </>
+          ) : (
+            <>
+              <Flame size={16} />
+              Run Simulator
+            </>
+          )}
+        </button>
       </div>
 
       {/* Editor & Configuration Grid */}

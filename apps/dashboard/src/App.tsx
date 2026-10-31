@@ -65,7 +65,29 @@ const pageMeta: Record<Tab, { eyebrow: string; title: string; description: strin
 };
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '') as Tab;
+      if (['overview', 'reviews', 'sandbox', 'blast', 'audit', 'settings'].includes(hash)) return hash;
+    }
+    return 'overview';
+  });
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '') as Tab;
+      if (['overview', 'reviews', 'sandbox', 'blast', 'audit', 'settings'].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    window.location.hash = tab;
+  };
   const [selectedShockPreset, setSelectedShockPreset] = useState<string>('sqliAndSecrets');
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [stats, setStats] = useState<SystemStats | null>(null);
@@ -169,7 +191,7 @@ export function App() {
 
   const handleTriggerShock = (presetId: string) => {
     setSelectedShockPreset(presetId);
-    setActiveTab('sandbox');
+    handleTabChange('sandbox');
   };
 
   const currentPage = pageMeta[activeTab];
@@ -179,7 +201,7 @@ export function App() {
       {/* Floating Pill Navbar */}
       <Navbar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={handleTabChange} 
         onOpenSandbox={() => setActiveTab('sandbox')} 
         appInstallUrl={appInstallUrl} 
         onSignedOut={handleSignedOut} 
@@ -193,27 +215,29 @@ export function App() {
           </div>
         )}
 
-        {/* Page Heading */}
-        <section className="page-heading">
-          <div>
-            <div className="eyebrow">
-              <span className="eyebrow-mark" />
-              {currentPage.eyebrow}
+        {/* Page Heading - only on non-overview tabs (overview has its dedicated Hero Banner) */}
+        {activeTab !== 'overview' && (
+          <section className="page-heading">
+            <div>
+              <div className="eyebrow">
+                <span className="eyebrow-mark" />
+                {currentPage.eyebrow}
+              </div>
+              <h1>{currentPage.title}</h1>
+              <p>{currentPage.description}</p>
             </div>
-            <h1>{currentPage.title}</h1>
-            <p>{currentPage.description}</p>
-          </div>
-          <div className="heading-meta">
-            <span className="live-indicator">
-              <span className={`dot-pulse${loadError ? ' offline' : ''}`} />
-              {loadError ? 'API offline' : 'Live Gate Active'}
-            </span>
-            <span className="heading-separator" />
-            <span className="heading-date">
-              {new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
-            </span>
-          </div>
-        </section>
+            <div className="heading-meta">
+              <span className="live-indicator">
+                <span className={`dot-pulse${loadError ? ' offline' : ''}`} />
+                {loadError ? 'API offline' : 'Live Gate Active'}
+              </span>
+              <span className="heading-separator" />
+              <span className="heading-date">
+                {new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          </section>
+        )}
 
         {authReady && !signedIn && (
           <div className="pipeline-status" role="status">
@@ -231,17 +255,26 @@ export function App() {
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <>
-            {/* Crisis Twin Hero Banner with Quick Shocks */}
+            {/* Crisis Hero Banner with Quick Shocks */}
             <div className="surface p-6 md:p-8 relative overflow-hidden bg-gradient-to-r from-ink via-ink-card to-ultra/25 border-line-bright">
               <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                <div className="max-w-2xl space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-white/10 text-white text-xs font-semibold border border-line">
-                    <Flame size={13} className="text-ember" />
-                    Autonomous Flight Simulator for Code
+                <div className="max-w-3xl space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-white/10 text-white text-xs font-semibold border border-line">
+                      <Flame size={13} className="text-ember" />
+                      Autonomous Flight Simulator for Code
+                    </div>
+                    <span className="live-indicator">
+                      <span className={`dot-pulse${loadError ? ' offline' : ''}`} />
+                      {loadError ? 'API offline' : 'Live Gate Active'}
+                    </span>
+                    <span className="text-xs text-ice/40 font-mono">
+                      {new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
-                  <h2 className="display text-3xl md:text-5xl text-white font-extrabold tracking-tight leading-tight">
+                  <h1 className="display text-3xl md:text-5xl text-white font-extrabold tracking-tight leading-tight">
                     Pilots rehearse failure in a simulator. Why not developers?
-                  </h2>
+                  </h1>
                   <p className="serif text-base md:text-lg text-ice/90 leading-relaxed">
                     “Most tools check your linting. RevAI shows you what could break in production, why it matters, and lets three AI reviewers debate before anything is merged.”
                   </p>
@@ -257,7 +290,7 @@ export function App() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('blast')}
+                      onClick={() => handleTabChange('blast')}
                       className="btn-ghost py-2.5 px-5 flex items-center gap-2"
                     >
                       <Share2 size={15} />

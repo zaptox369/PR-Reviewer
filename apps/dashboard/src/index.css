@@ -370,7 +370,7 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  max-width: 960px;
+  max-width: 1680px;
   background: rgba(8, 8, 10, 0.92);
   border: 1px solid var(--line);
   padding: 6px 8px 6px 18px;
@@ -500,9 +500,9 @@
 /* App Main Container */
 .app-main {
   width: 100%;
-  max-width: 1180px;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 100px 20px 60px 20px;
+  padding: 86px clamp(16px, 2.5vw, 40px) 48px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -697,7 +697,12 @@
 .app-footer {
   margin-top: auto;
   border-top: 1px solid var(--line);
-  padding: 24px 20px;
+  padding: 24px 28px;
+  width: 100%;
+  max-width: 1680px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px clamp(16px, 2.5vw, 40px);
   display: flex;
   align-items: center;
   justify-content: space-between;
