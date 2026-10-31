@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button" 
             onClick={() => setActiveTab('overview')} 
             className="app-brand bg-transparent border-0 text-left p-0"
-            aria-label="RevAI Crisis Twin Home"
+            aria-label="RevAI Home"
           >
             <div className="app-brand-mark">
               <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="app-brand-name">RevAI</span>
-              <span className="app-brand-badge">Twin</span>
+              <span className="app-brand-badge">Gate</span>
             </div>
           </button>
 

@@ -365,7 +365,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
 
         {/* Modal Footer */}
         <div className="p-4 border-t border-line bg-ink flex items-center justify-between text-xs text-ice/60">
-          <span>RevAI Twin v1.0 • SHA: {review.headSha ? review.headSha.slice(0, 7) : 'Verified'}</span>
+          <span>RevAI v1.0 • SHA: {review.headSha ? review.headSha.slice(0, 7) : 'Verified'}</span>
           <button
             type="button"
             onClick={onClose}

@@ -237,13 +237,13 @@ export function App() {
                 <div className="max-w-2xl space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 bg-white/10 text-white text-xs font-semibold border border-line">
                     <Flame size={13} className="text-ember" />
-                    Crisis Twin Flight Simulator for Code
+                    Autonomous Flight Simulator for Code
                   </div>
                   <h2 className="display text-3xl md:text-5xl text-white font-extrabold tracking-tight leading-tight">
                     Pilots rehearse failure in a simulator. Why not developers?
                   </h2>
                   <p className="serif text-base md:text-lg text-ice/90 leading-relaxed">
-                    “Most tools check your linting. RevAI Crisis Twin shows you what could break in production, why it matters, and lets three AI reviewers debate before anything is merged.”
+                    “Most tools check your linting. RevAI shows you what could break in production, why it matters, and lets three AI reviewers debate before anything is merged.”
                   </p>
 
                   <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -417,7 +417,7 @@ export function App() {
             <circle cx="20" cy="16" r="7" stroke="#1a2fd4" strokeWidth="2.2" />
             <circle cx="16" cy="16" r="2.5" fill="#ff5a2c" />
           </svg>
-          <span className="font-semibold text-white">RevAI Twin</span>
+          <span className="font-semibold text-white">RevAI</span>
           <span className="text-ice/40">•</span>
           <span>Flight simulator for pull requests</span>
         </div>
