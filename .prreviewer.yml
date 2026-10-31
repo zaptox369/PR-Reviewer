@@ -1,0 +1,41 @@
+# RevAI - Repository-Specific Configuration File
+# Place this at the root of your git repository (.prreviewer.yml)
+
+# Focus categories to evaluate (security, bug, performance, reliability, readability, testing, architecture)
+focus:
+  - security
+  - bug
+  - performance
+  - reliability
+
+# Minimum severity threshold: only comments matching or exceeding this level are posted
+# Options: low, medium, high, critical
+severity_threshold: medium
+
+# Maximum comments allowed per pull request to avoid review fatigue
+max_comments: 15
+
+# Automatically review newly opened and updated PRs
+auto_review: true
+
+# Patterns to filter out from diff processing (reduces noise and token usage)
+ignore_paths:
+  - "**/*.lock"
+  - "**/package-lock.json"
+  - "**/pnpm-lock.yaml"
+  - "**/yarn.lock"
+  - "dist/**"
+  - "build/**"
+  - "out/**"
+  - "**/*.min.js"
+  - "**/*.min.css"
+  - "coverage/**"
+  - "docs/**"
+
+# Custom natural language team guidelines
+custom_guidelines: |
+  - Prefer async/await over raw promise chains (.then/.catch).
+  - Never log user emails, tokens, or passwords to stdout or log aggregators.
+  - Ensure all database queries utilize parameterized placeholders against SQL injection.
+  - Enforce atomic transaction handling for stateful operations.
+  - Sanitize all raw HTML rendering with DOMPurify against XSS.

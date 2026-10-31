@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build --workspace=apps/dashboard",
+  "outputDirectory": "apps/dashboard/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
