@@ -1,13 +1,27 @@
-# PR-Reviewer
+# PR-Reviewer (RevAI Gatekeeper)
 
-> An enterprise-grade, privacy-first AI-powered code review engine for GitHub Pull Requests, delivering secure, accurate, and actionable feedback.
-> It intercepts PR diffs via HMAC-authenticated webhooks, defuses adversarial prompt injections, strips sensitive credentials and PII before LLM dispatch, eliminates line hallucination, computes security and health scores (0–100), and leaves actionable inline comments with markdown code fixes.
+> An enterprise-grade, privacy-first AI-powered code review engine and interactive **PR Flight Simulator** for GitHub Pull Requests, delivering secure, accurate, and actionable feedback.
+> It intercepts PR diffs via HMAC-authenticated webhooks, defuses adversarial prompt injections, strips sensitive credentials and PII before LLM dispatch, eliminates line hallucination, simulates downstream blast radius, lets three specialized AI reviewers debate every commit, and leaves actionable inline comments with markdown code fixes.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
 [![npm version](https://img.shields.io/npm/v/pr-reviewer.svg)](https://www.npmjs.com/package/pr-reviewer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/zaptox369/PR-Reviewer.svg?style=social&label=Stars)](https://github.com/zaptox369/PR-Reviewer/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/zaptox369/PR-Reviewer.svg)](https://github.com/zaptox369/PR-Reviewer/commits/main)
+
+- **GitHub Repository:** https://github.com/zaptox369/PR-Reviewer
+
+---
+
+## ✨ Interactive Workspace & Landing Overview
+
+The RevAI dashboard (`apps/dashboard`) features a full-width OLED dark interface designed for engineering and security teams:
+
+- **Multi-Agent Debate Showcase:** Watch three specialized AI reviewer personas (**Security Hawk**, **Architecture Purist**, and **Performance & SRE**) debate SQL injections, ledger race conditions, and multi-tenant IDOR bypasses before synthesizing a consensus verdict and verified remediation patch.
+- **6-Stage Zero-Trust Pipeline Visualizer:** Inspect every cryptographic and privacy gate between a `git push` and an inline GitHub PR comment.
+- **Interactive Pre-Flight Secret Scrubber:** Toggle live between a raw developer diff containing leaked AWS/Stripe/PII credentials and the deterministically hashed payload transmitted to the LLM.
+- **PR Flight Simulator (`#sandbox`):** Inject high-consequence vulnerability shocks or paste any custom unified git diff to rehearse merges safely.
+- **Blast Radius & Dependency Map (`#blast`):** Trace how code modifications propagate across microservices, databases, caches, and external webhooks.
 
 ---
 
@@ -96,8 +110,8 @@ flowchart TD
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-org/ai-pr-reviewer.git
-cd ai-pr-reviewer
+git clone https://github.com/zaptox369/PR-Reviewer.git
+cd PR-Reviewer
 npm install
 ```
 
@@ -198,8 +212,9 @@ RevAI includes an interactive **Sandbox Simulator** so developers and security e
 1. **SQL Injection & Hardcoded Keys:** Detects SQL concatenation and hardcoded secrets.
 2. **Data Privacy & Secret Redaction:** Live test of AWS keys, Stripe tokens, and customer emails being masked before LLM transmission.
 3. **Prompt Injection Attack:** Simulates system override instructions embedded in code comments and verifies sandbox containment.
-4. **React Memory Leak:** Detects missing cleanup functions in `useEffect` timers.
-5. **Clean Async Refactor:** Validates clean code adhering to guidelines with 0 warnings.
+4. **Ledger Race Condition:** Detects non-atomic balance check-then-act concurrency flaws.
+5. **Auth & IDOR Bypass:** Flags missing tenant scoping (`orgId`) in multi-tenant queries.
+6. **Clean Async Refactor:** Validates clean code adhering to guidelines with 0 warnings.
 
 ---
 
@@ -275,4 +290,3 @@ To measure and continuously improve review quality on your own team's PRs:
 ## 🛡️ License
 
 MIT License. Designed for secure, reliable enterprise software engineering teams.
->>>>>>> ca1ad7f (Initial commit)

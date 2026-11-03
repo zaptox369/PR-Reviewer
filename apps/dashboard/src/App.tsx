@@ -7,6 +7,7 @@ import { SandboxSimulator } from './components/SandboxSimulator.js';
 import { BlastRadiusView } from './components/BlastRadiusView.js';
 import { SecurityAuditView } from './components/SecurityAuditView.js';
 import { RepoSettingsView } from './components/RepoSettingsView.js';
+import { OverviewShowcase } from './components/OverviewShowcase.js';
 import { 
   fetchAuthStatus, 
   fetchReviews, 
@@ -395,6 +396,12 @@ export function App() {
               onRefresh={() => void loadAllData()} 
               canRefresh={signedIn} 
             />
+
+            {/* Deep Scrollable Project Architecture, Interactive Demos & Comparison Showcase */}
+            <OverviewShowcase
+              onNavigateTab={handleTabChange}
+              onTriggerShock={handleTriggerShock}
+            />
           </>
         )}
 
@@ -442,22 +449,125 @@ export function App() {
         )}
       </main>
 
-      {/* Footer - Crisis Twin Style */}
-      <footer className="app-footer">
-        <div className="flex items-center gap-3">
-          <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <circle cx="12" cy="16" r="7" stroke="#cbd8ff" strokeWidth="2.2" />
-            <circle cx="20" cy="16" r="7" stroke="#1a2fd4" strokeWidth="2.2" />
-            <circle cx="16" cy="16" r="2.5" fill="#ff5a2c" />
-          </svg>
-          <span className="font-semibold text-white">RevAI</span>
-          <span className="text-ice/40">•</span>
-          <span>Flight simulator for pull requests</span>
-        </div>
-        <div className="flex items-center gap-4 text-[11px] text-ice/60 font-mono">
-          <span>HMAC-SHA256</span>
-          <span>Zero-Leak Redaction</span>
-          <span>Multi-Agent Consensus</span>
+      {/* Footer - Flagship Developer Platform Style */}
+      <footer className="mt-auto border-t border-line bg-ink-soft/40">
+        <div className="max-w-[1680px] mx-auto px-4 sm:px-8 py-12 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            {/* Brand & Mission (2 cols) */}
+            <div className="lg:col-span-2 space-y-3">
+              <div className="flex items-center gap-3">
+                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="16" r="7" stroke="#cbd8ff" strokeWidth="2.2" />
+                  <circle cx="20" cy="16" r="7" stroke="#1a2fd4" strokeWidth="2.2" />
+                  <circle cx="16" cy="16" r="2.5" fill="#ff5a2c" />
+                </svg>
+                <span className="head text-lg text-white">RevAI Gatekeeper</span>
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-ember/15 text-ember border border-ember/30">
+                  v2.4 Enterprise
+                </span>
+              </div>
+              <p className="text-xs text-ice/65 max-w-md leading-relaxed">
+                An enterprise-grade, privacy-first AI code review engine and flight simulator for GitHub Pull Requests.
+                Intercepts diffs via HMAC-SHA256 webhooks, scrubs credentials before LLM dispatch, neutralizes prompt
+                injections, and synthesizes multi-agent consensus verdicts.
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-mono text-ice/60">
+                <span className="px-2.5 py-1 rounded-md bg-white/5 border border-line">HMAC-SHA256 Verified</span>
+                <span className="px-2.5 py-1 rounded-md bg-white/5 border border-line">Zero-Leak Redactor</span>
+                <span className="px-2.5 py-1 rounded-md bg-white/5 border border-line">100% Hunk-Snapped</span>
+              </div>
+            </div>
+
+            {/* Platform Navigation */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-white">Platform</div>
+              <ul className="space-y-2 text-xs text-ice/65">
+                <li>
+                  <button type="button" onClick={() => handleTabChange('overview')} className="hover:text-white transition-colors">
+                    Workspace Overview
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTabChange('reviews')} className="hover:text-white transition-colors">
+                    Live PR Review Feed
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTabChange('sandbox')} className="hover:text-white transition-colors">
+                    PR Flight Simulator
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTabChange('blast')} className="hover:text-white transition-colors">
+                    Blast Radius & Dependency Map
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Security & Governance */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-white">Security & Governance</div>
+              <ul className="space-y-2 text-xs text-ice/65">
+                <li>
+                  <button type="button" onClick={() => handleTabChange('audit')} className="hover:text-white transition-colors">
+                    Cryptographic Audit Trail
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTabChange('settings')} className="hover:text-white transition-colors">
+                    Repository Rules (.prreviewer.yml)
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTriggerShock('sqliAndSecrets')} className="hover:text-white transition-colors">
+                    Test Secret Scrubbing Demo
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => handleTriggerShock('raceCondition')} className="hover:text-white transition-colors">
+                    Test Concurrency Shock
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Supported Engines */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-white">Supported AI Engines</div>
+              <ul className="space-y-2 text-xs text-ice/65 font-mono">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-mint" /> Google Gemini 1.5 Pro
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-mint" /> Anthropic Claude 3.5
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-mint" /> OpenAI GPT-4o
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ultra" /> Ollama (Local Air-Gapped)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ember" /> Offline Heuristic Engine
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ice/50">
+            <div>
+              © {new Date().getFullYear()} RevAI Gatekeeper. Advisory-only PR governance — never auto-merges without human sign-off.
+            </div>
+            <div className="flex items-center gap-4 font-mono text-[11px]">
+              <span className="flex items-center gap-1.5 text-mint">
+                <span className="w-2 h-2 rounded-full bg-mint animate-pulse" />
+                Zero-Trust Sandbox Ready
+              </span>
+              <span>•</span>
+              <span>MIT Licensed</span>
+            </div>
+          </div>
         </div>
       </footer>
 
