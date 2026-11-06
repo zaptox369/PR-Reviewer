@@ -28,6 +28,10 @@ function googleOAuthConfigured(): boolean {
   return Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && env.AUTH_SESSION_SECRET.length >= 32);
 }
 
+function anyOAuthConfigured(): boolean {
+  return oauthConfigured() || googleOAuthConfigured();
+}
+
 function cookieOptions(maxAge: number, path: string, sameSite: 'Lax' | 'None' = 'Lax'): string {
   const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
   return `Path=${path}; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${secure}`;
@@ -71,6 +75,11 @@ export function requireSession(req: Request, res: Response, next: NextFunction):
     next();
     return;
   }
+  // When OAuth is not configured on the server, allow workspace operator mode out-of-the-box.
+  if (!anyOAuthConfigured()) {
+    next();
+    return;
+  }
   const session = verifyToken(readCookie(req, SESSION_COOKIE));
   if (!session || typeof session.sub !== 'string') {
     res.status(401).json({ error: 'Sign in is required.' });
@@ -80,12 +89,25 @@ export function requireSession(req: Request, res: Response, next: NextFunction):
 }
 
 authRouter.get('/status', (req: Request, res: Response) => {
+  const configured = anyOAuthConfigured();
+  if (!configured) {
+    res.json({
+      configured: false,
+      user: {
+        id: 'workspace-operator',
+        login: 'workspace-admin',
+        avatarUrl: '',
+      },
+    });
+    return;
+  }
+
   const session = verifyToken(readCookie(req, SESSION_COOKIE));
   const user = session && typeof session.sub === 'string' &&
     typeof session.login === 'string' && typeof session.avatarUrl === 'string'
     ? { id: session.sub, login: session.login, avatarUrl: session.avatarUrl }
     : null;
-  res.json({ configured: oauthConfigured() || googleOAuthConfigured(), user });
+  res.json({ configured: true, user });
 });
 
 authRouter.get('/google', (req: Request, res: Response) => {

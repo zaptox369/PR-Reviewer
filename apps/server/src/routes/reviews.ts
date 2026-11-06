@@ -6,7 +6,7 @@ import { CommentFeedback } from '../types/index.js';
 
 export const reviewRouter = Router();
 
-const SAMPLE_DIFFS = {
+export const SAMPLE_DIFFS = {
   sqliAndSecrets: {
     title: 'fix(auth): add query lookup and session verification',
     repo: 'acme-corp/api-gateway',
@@ -26,6 +26,68 @@ index 8a3f9e2..5b2d1c4 100644
 +  console.log("Processing login for user with password:", password);
 +  
    return res.json({ status: "ok" });
+ }
+`
+  },
+  raceCondition: {
+    title: 'feat(ledger): optimize async wallet withdrawal balance deduction',
+    repo: 'acme-corp/api-gateway',
+    diff: `diff --git a/src/services/ledger.ts b/src/services/ledger.ts
+index 4192a1b..8821c09 100644
+--- a/src/services/ledger.ts
++++ b/src/services/ledger.ts
+@@ -39,7 +39,9 @@ export async function withdrawFunds(userId: string, amount: number) {
+   const wallet = await db.wallets.findUnique({ where: { userId } });
+   if (!wallet || wallet.balance < amount) throw new Error("Insufficient funds");
+-  return db.$transaction([
+-    db.wallets.update({ where: { userId }, data: { balance: { decrement: amount } } })
+-  ]);
++  // Perform external payout webhook before non-atomic balance update
++  await sendPayoutWebhook(userId, amount);
++  return db.wallets.update({ where: { userId }, data: { balance: wallet.balance - amount } });
+ }
+`
+  },
+  authBypass: {
+    title: 'refactor(invoices): simplify invoice lookup endpoint by id',
+    repo: 'acme-corp/api-gateway',
+    diff: `diff --git a/src/routes/invoices.ts b/src/routes/invoices.ts
+index 9012fa1..3341bc8 100644
+--- a/src/routes/invoices.ts
++++ b/src/routes/invoices.ts
+@@ -25,7 +25,6 @@ router.get("/invoices/:invoiceId", requireAuth, async (req, res) => {
+-  const invoice = await db.invoices.findFirst({
+-    where: { id: req.params.invoiceId, orgId: req.user.orgId }
+-  });
++  // Direct lookup by invoiceId without tenant orgId scoping (IDOR risk)
++  const invoice = await db.invoices.findUnique({ where: { id: req.params.invoiceId } });
+   return res.json(invoice);
+ });
+`
+  },
+  cleanPr: {
+    title: 'refactor(service): clean migration to async/await and robust error handling',
+    repo: 'acme-corp/api-gateway',
+    diff: `diff --git a/src/services/billing.ts b/src/services/billing.ts
+index 1122334..5566778 100644
+--- a/src/services/billing.ts
++++ b/src/services/billing.ts
+@@ -20,10 +20,15 @@ export async function chargeCustomer(customerId: string, amount: number) {
+-  return stripe.charges.create({ customer: customerId, amount })
+-    .then((charge) => logSuccess(charge))
+-    .catch((err) => logError(err));
++  try {
++    const charge = await stripe.charges.create({
++      customer: customerId,
++      amount,
++      currency: 'usd',
++    });
++    logger.info("Charge succeeded", { chargeId: charge.id });
++    return charge;
++  } catch (error) {
++    logger.error("Charge failed", { customerId, error });
++    throw new PaymentError("Unable to complete transaction");
++  }
  }
 `
   },

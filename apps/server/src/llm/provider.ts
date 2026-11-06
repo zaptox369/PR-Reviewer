@@ -56,7 +56,7 @@ export function runHeuristicReview(chunk: DiffChunk, settings: RepoSettings): LL
 
         // 1. SQL Injection Detection
         if (/(?:SELECT|INSERT|UPDATE|DELETE|FROM|WHERE).*?\+\s*[\w\.]+/i.test(code) ||
-            /(?:query|execute)\s*\(\s*`[^`]*\$\{.*?\}[^`]*`\s*\)/i.test(code)) {
+            /(?:query|execute|\$queryRawUnsafe)\s*\(\s*(?:`[^`]*\$\{.*?\}[^`]*`|query)/i.test(code)) {
           comments.push({
             id: uuidv4(),
             file: file.newPath,
@@ -76,7 +76,7 @@ export function runHeuristicReview(chunk: DiffChunk, settings: RepoSettings): LL
         if (
           /\[REDACTED_SECRET:/i.test(code) ||
           /(?:sk[-_]live|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36})/i.test(code) ||
-          /(?:api[_-]?key|secret|password|auth_token)\s*=\s*["'][^"']{10,}["']/i.test(code)
+          /(?:api[_-]?key|secret|password|auth_token|jwt_secret)\s*=\s*["'][^"']{10,}["']/i.test(code)
         ) {
           comments.push({
             id: uuidv4(),
@@ -94,7 +94,7 @@ export function runHeuristicReview(chunk: DiffChunk, settings: RepoSettings): LL
         }
 
         // 3. Sensitive Data Logging (PII, credentials, tokens)
-        if (/console\.(?:log|warn|info|debug)\s*\([^)]*(?:password|token|secret|creditcard|ssn|authorization|cookie)/i.test(code)) {
+        if (/console\.(?:log|warn|info|debug)\s*\([^)]*(?:password|token|secret|creditcard|ssn|authorization|cookie|REDACTED_SECRET:PII_EMAIL)/i.test(code)) {
           comments.push({
             id: uuidv4(),
             file: file.newPath,
@@ -144,7 +144,7 @@ export function runHeuristicReview(chunk: DiffChunk, settings: RepoSettings): LL
         }
 
         // 6. Memory Leak: setInterval / addEventListener without cleanup in React useEffect
-        if (/useEffect\s*\(\s*\(\s*\)\s*=>\s*\{/i.test(code) && /setInterval|addEventListener/i.test(code) && !code.includes('return () =>')) {
+        if ((/useEffect\s*\(\s*\(\s*\)\s*=>\s*\{/i.test(code) || /setInterval\s*\(/i.test(code)) && /setInterval|addEventListener/i.test(code) && !code.includes('return () =>') && !code.includes('clearInterval')) {
           comments.push({
             id: uuidv4(),
             file: file.newPath,
@@ -172,6 +172,40 @@ export function runHeuristicReview(chunk: DiffChunk, settings: RepoSettings): LL
             confidence: 0.88,
             ruleId: 'STYLE-ASYNC-006',
           });
+        }
+
+        // 8. Concurrency / Ledger Race Condition (TOCTOU balance update)
+        if (/balance\s*:\s*[\w\.]+\.balance\s*-\s*amount/i.test(code) || /sendPayoutWebhook\s*\(/i.test(code)) {
+          comments.push({
+            id: uuidv4(),
+            file: file.newPath,
+            line: lineNum,
+            severity: 'critical',
+            category: 'reliability',
+            title: 'Non-Atomic Balance Update (TOCTOU Race Condition)',
+            message: 'Computing `wallet.balance - amount` in memory or triggering external payout side-effects outside an atomic database transaction allows double-spend race conditions under concurrent requests.',
+            suggestion: '```suggestion\nreturn db.$transaction(async (tx) => {\n  const res = await tx.wallets.updateMany({\n    where: { userId, balance: { gte: amount } },\n    data: { balance: { decrement: amount } }\n  });\n  if (res.count === 0) throw new Error("Insufficient funds");\n});\n```',
+            confidence: 0.96,
+            ruleId: 'REL-RACE-008',
+          });
+          securityConcerns.push(`Concurrency race condition in ${file.newPath}:${lineNum}`);
+        }
+
+        // 9. Multi-Tenant IDOR / Missing Organization Scope
+        if (/findUnique\s*\(\s*\{\s*where\s*:\s*\{\s*id\s*:\s*req\.params\./i.test(code) && !/orgId|tenantId|userId/i.test(code)) {
+          comments.push({
+            id: uuidv4(),
+            file: file.newPath,
+            line: lineNum,
+            severity: 'critical',
+            category: 'security',
+            title: 'Multi-Tenant IDOR Vulnerability (Missing orgId Scope)',
+            message: 'Querying resource strictly by `req.params` ID without enforcing `orgId: req.user.orgId` allows any authenticated user to access records belonging to other tenants.',
+            suggestion: '```suggestion\nconst invoice = await db.invoices.findFirst({\n  where: { id: req.params.invoiceId, orgId: req.user.orgId }\n});\n```',
+            confidence: 0.97,
+            ruleId: 'SEC-IDOR-009',
+          });
+          securityConcerns.push(`Multi-tenant IDOR exposure in ${file.newPath}:${lineNum}`);
         }
       }
     }

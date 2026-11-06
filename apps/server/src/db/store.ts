@@ -204,9 +204,6 @@ const SAMPLE_AUDIT_LOGS: SecurityAuditEntry[] = [
   },
 ];
 
-const SAMPLE_REVIEW_IDS = new Set(SAMPLE_REVIEWS.map((review) => review.id));
-const SAMPLE_AUDIT_LOG_IDS = new Set(SAMPLE_AUDIT_LOGS.map((entry) => entry.id));
-
 class MemoryStore {
   private data: DatabaseSchema;
 
@@ -224,36 +221,35 @@ class MemoryStore {
     this.ensureDataDir();
     if (fs.existsSync(DATA_FILE)) {
       try {
-        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8').replace(/^\uFEFF/, '');
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.reviews) && Array.isArray(parsed.repos)) {
-          const reviews = parsed.reviews.filter((review: ReviewSummary) => !SAMPLE_REVIEW_IDS.has(review.id));
-          const auditLogs = Array.isArray(parsed.auditLogs)
-            ? parsed.auditLogs.filter((entry: SecurityAuditEntry) => !SAMPLE_AUDIT_LOG_IDS.has(entry.id))
-            : [];
-          const data: DatabaseSchema = { ...parsed, reviews, auditLogs };
-
-          if (reviews.length !== parsed.reviews.length || auditLogs.length !== (parsed.auditLogs?.length ?? 0)) {
-            this.saveData(data);
-          }
-
+          const reviews = parsed.reviews.length > 0 ? parsed.reviews : SAMPLE_REVIEWS;
+          const auditLogs = Array.isArray(parsed.auditLogs) && parsed.auditLogs.length > 0
+            ? parsed.auditLogs
+            : SAMPLE_AUDIT_LOGS;
+          const repos = parsed.repos.length > 0 ? parsed.repos : INITIAL_REPOS;
+          const data: DatabaseSchema = { reviews, repos, auditLogs };
           return data;
         }
       } catch (err) {
-        console.error('Failed to parse db.json, using empty review and audit data:', err);
+        console.error('Failed to parse db.json, restoring sample review and audit data:', err);
       }
     }
 
     const initial: DatabaseSchema = {
-      reviews: [],
+      reviews: SAMPLE_REVIEWS,
       repos: INITIAL_REPOS,
-      auditLogs: [],
+      auditLogs: SAMPLE_AUDIT_LOGS,
     };
     this.saveData(initial);
     return initial;
   }
 
   private saveData(data: DatabaseSchema) {
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+      return;
+    }
     try {
       this.ensureDataDir();
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');

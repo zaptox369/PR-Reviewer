@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, 
   CheckCircle2, 
@@ -19,7 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { simulateReview, fetchSampleDiffs } from '../services/api.js';
-import { ReviewSummary, ReviewComment } from '../types/index.js';
+import { ReviewSummary } from '../types/index.js';
 
 interface SandboxSimulatorProps {
   onReviewCreated?: (review: ReviewSummary) => void;
@@ -28,10 +28,10 @@ interface SandboxSimulatorProps {
 }
 
 const SHOCK_PRESETS: { id: string; label: string; tag: string; description: string }[] = [
-  { id: 'sqliAndSecrets', label: 'SQLi + Secret Leak', tag: 'Critical Shock', description: 'Raw SQL query interpolation with hardcoded JWT secret.' },
-  { id: 'raceCondition', label: 'Race Condition', tag: 'Concurrency Shock', description: 'Concurrent balance updates lacking transaction locks.' },
-  { id: 'authBypass', label: 'Auth & IDOR', tag: 'Access Shock', description: 'Missing tenant verification in user profile updates.' },
-  { id: 'cleanPr', label: 'Clean Refactor', tag: 'Safe Merge', description: 'Production-ready refactor with full unit tests and types.' },
+  { id: 'sqliAndSecrets', label: 'SQLi + Secret Leak', tag: 'Critical Shock', description: 'Raw SQL query interpolation with hardcoded Stripe live secret.' },
+  { id: 'raceCondition', label: 'Race Condition', tag: 'Concurrency Shock', description: 'Concurrent wallet balance updates lacking transaction locks.' },
+  { id: 'authBypass', label: 'Auth & IDOR', tag: 'Access Shock', description: 'Missing tenant orgId verification in invoice lookup.' },
+  { id: 'cleanPr', label: 'Clean Refactor', tag: 'Safe Merge', description: 'Production-ready async/await refactor with structured error handling.' },
 ];
 
 export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({ 
@@ -50,6 +50,8 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReviewSummary | null>(null);
   const [activeTab, setActiveTab] = useState<'debate' | 'comments' | 'diff' | 'secrets'>('debate');
+  const [copiedCommentId, setCopiedCommentId] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Load sample diffs from server
   useEffect(() => {
@@ -66,7 +68,6 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
       })
       .catch((err: unknown) => {
         console.error('Failed to load sample diffs:', err);
-        // Fallback default sample
         setDiffText(`diff --git a/src/services/auth.ts b/src/services/auth.ts
 --- a/src/services/auth.ts
 +++ b/src/services/auth.ts
@@ -111,12 +112,22 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
       });
       setResult(res);
       onReviewCreated?.(res);
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err: any) {
       console.error('Simulation failed:', err);
       setError(err.message || 'Simulation pipeline failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopySuggestion = (code: string, id: string) => {
+    const clean = code.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
+    void navigator.clipboard.writeText(clean);
+    setCopiedCommentId(id);
+    setTimeout(() => setCopiedCommentId(null), 2000);
   };
 
   // Generate multi-agent debate perspectives based on the review outcome
@@ -143,44 +154,84 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
     return `Security Gate Verdict: Health Score ${result.score}/100. ${redacted > 0 ? `${redacted} credentials were stripped before reaching the AI model.` : 'No plain text secrets exposed.'} Verified HMAC and abstract syntax tree line mappings. Recommendation: ${result.risk === 'high' ? 'Block PR until security issues resolved.' : 'Safe to proceed with standard CI/CD pipeline.'}`;
   };
 
+  const activePresetMeta = SHOCK_PRESETS.find((p) => p.id === selectedShock);
+
   return (
     <div className="space-y-6">
-      {/* Simulation Control Bar */}
-      <div className="surface p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        {/* Shock Selection Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-ice/60 uppercase tracking-wider mr-2">
-            Try a shock scenario:
+      {/* Guided 3-Step Helper Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="surface p-3.5 flex items-center gap-3 border-line">
+          <span className="w-6 h-6 rounded-full bg-white/10 text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">
+            1
           </span>
-          {SHOCK_PRESETS.map((p) => {
-            const isSelected = selectedShock === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleSelectShock(p.id)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all flex items-center gap-2 ${
-                  isSelected
-                    ? 'bg-white text-ink shadow-md font-bold'
-                    : 'bg-white/5 text-ice/80 border border-line hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <span>{p.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/70'
-                }`}>
-                  {p.tag}
-                </span>
-              </button>
-            );
-          })}
+          <div className="text-xs">
+            <div className="font-semibold text-white">Pick a Shock Scenario</div>
+            <div className="text-ice/55 text-[11px]">Choose a preset below or paste any Git diff</div>
+          </div>
+        </div>
+        <div className="surface p-3.5 flex items-center gap-3 border-line">
+          <span className="w-6 h-6 rounded-full bg-ember/20 text-ember font-mono text-xs font-bold flex items-center justify-center shrink-0">
+            2
+          </span>
+          <div className="text-xs">
+            <div className="font-semibold text-white">Run the Gatekeeper</div>
+            <div className="text-ice/55 text-[11px]">Scrubs secrets & runs 3-agent evaluation</div>
+          </div>
+        </div>
+        <div className="surface p-3.5 flex items-center gap-3 border-line">
+          <span className="w-6 h-6 rounded-full bg-mint/20 text-mint font-mono text-xs font-bold flex items-center justify-center shrink-0">
+            3
+          </span>
+          <div className="text-xs">
+            <div className="font-semibold text-white">Inspect Debate & Copy Fix</div>
+            <div className="text-ice/55 text-[11px]">Compare advisor stances & copy the code patch</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Simulation Control Bar */}
+      <div className="surface p-4 md:p-5 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 border-line-bright">
+        {/* Shock Selection Pills */}
+        <div className="space-y-2 w-full xl:w-auto">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-ice/60 uppercase tracking-wider mr-1">
+              Scenario Preset:
+            </span>
+            {SHOCK_PRESETS.map((p) => {
+              const isSelected = selectedShock === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSelectShock(p.id)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all flex items-center gap-2 ${
+                    isSelected
+                      ? 'bg-white text-ink shadow-md font-bold'
+                      : 'bg-white/5 text-ice/80 border border-line hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <span>{p.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/70'
+                  }`}>
+                    {p.tag}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {activePresetMeta && (
+            <p className="text-xs text-ice/60 pl-1">
+              <strong className="text-white">{activePresetMeta.label}:</strong> {activePresetMeta.description}
+            </p>
+          )}
         </div>
 
         <button
           type="button"
           onClick={handleRunSimulation}
           disabled={loading}
-          className="btn-ember shrink-0 text-sm py-2.5 px-6 shadow-glow-ember font-bold flex items-center gap-2"
+          className="btn-ember shrink-0 text-sm py-2.5 px-6 shadow-glow-ember font-bold flex items-center gap-2 w-full sm:w-auto justify-center"
         >
           {loading ? (
             <>
@@ -190,7 +241,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
           ) : (
             <>
               <Flame size={16} />
-              Run Simulator
+              Run Simulator Now
             </>
           )}
         </button>
@@ -204,7 +255,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-line">
               <div className="flex items-center gap-2 text-xs font-semibold text-ice/80">
                 <Terminal size={14} className="text-ice/70" />
-                <span>Unified Git Diff</span>
+                <span>Unified Git Diff Input (Editable)</span>
               </div>
               <span className="text-[11px] font-mono text-ice/50">
                 {diffText.split('\n').length} lines
@@ -220,14 +271,23 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
             />
 
             <div className="mt-3 flex items-center justify-between text-xs text-ice/60">
-              <span>Supports syntax diffs with addition (+) and deletion (-) markers.</span>
-              <button
-                type="button"
-                onClick={() => setDiffText('')}
-                className="text-ice/60 hover:text-white transition-colors"
-              >
-                Clear
-              </button>
+              <span>Supports unified git diffs with addition (+) and deletion (-) markers.</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSelectShock(selectedShock)}
+                  className="text-ice/60 hover:text-white transition-colors"
+                >
+                  Reset Preset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiffText('')}
+                  className="text-ice/60 hover:text-white transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -298,7 +358,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                 <span className="font-semibold">Zero-Leak Redaction Active</span>
               </div>
               <p className="text-ice/60 text-[11px] leading-relaxed">
-                Tokens, private RSA keys, and API credentials in your diff are masked client-side and server-side before reaching any LLM inference node.
+                Tokens, private RSA keys, and API credentials in your diff are masked server-side before reaching any external LLM inference node.
               </p>
             </div>
 
@@ -330,9 +390,9 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
         </div>
       </div>
 
-      {/* Simulation Results - Crisis Twin Multi-Agent Debate & Findings */}
+      {/* Simulation Results */}
       {result && (
-        <div className="surface p-6 space-y-6 slide-up border-line-bright">
+        <div ref={resultsRef} className="surface p-6 space-y-6 slide-up border-line-bright">
           {/* Top Result Banner */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-line">
             <div className="flex items-center gap-4">
@@ -346,7 +406,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                 {result.score}
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="head text-xl text-white">{result.prTitle}</h3>
                   <span className={`badge uppercase text-[10px] ${
                     result.risk === 'high' ? 'risk-high' : result.risk === 'medium' ? 'risk-medium' : 'risk-low'
@@ -355,20 +415,20 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-ice/70 mt-1">
-                  {result.repo} • {result.commentsCount} issues identified • Analyzed in {(result.durationMs / 1000).toFixed(1)}s
+                  {result.repo} • {result.commentsCount} issues identified • Analyzed in {Math.max(0.1, result.durationMs / 1000).toFixed(1)}s
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-xs text-ice/60 font-mono">
-                Model: <span className="text-white font-semibold">{result.model || 'Gemini 2.5'}</span>
+                Model: <span className="text-white font-semibold">{result.model || 'gpt-4o'}</span>
               </span>
             </div>
           </div>
 
           {/* Navigation Sub-Tabs */}
-          <div className="flex items-center gap-2 border-b border-line pb-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-line pb-3">
             <button
               onClick={() => setActiveTab('debate')}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
@@ -401,7 +461,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
             </button>
           </div>
 
-          {/* Tab 1: The 3 AI Advisors who Disagree on Purpose (Crisis Twin Signature) */}
+          {/* Tab 1: The 3 AI Advisors */}
           {activeTab === 'debate' && (
             <div className="space-y-6">
               <div className="text-center max-w-xl mx-auto mb-2">
@@ -479,9 +539,9 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('comments')}
-                  className="btn-primary text-xs py-1.5 px-4"
+                  className="btn-primary text-xs py-1.5 px-4 shrink-0"
                 >
-                  Inspect All Comments <ChevronRight size={13} />
+                  Inspect Actionable Fixes ({result.comments.length}) <ChevronRight size={13} />
                 </button>
               </div>
             </div>
@@ -499,7 +559,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                 result.comments.map((c) => (
                   <div
                     key={c.id}
-                    className="p-4 rounded-xl bg-ink/70 border border-line space-y-2"
+                    className="p-4 rounded-xl bg-ink/70 border border-line space-y-2.5"
                   >
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`badge uppercase text-[10px] ${
@@ -510,8 +570,13 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                       <span className="badge bg-white/5 text-ice/80 border-line text-[11px] capitalize">
                         {c.category}
                       </span>
+                      {c.ruleId && (
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-white/5 text-ice/60 border border-line">
+                          {c.ruleId}
+                        </span>
+                      )}
                       <span className="font-mono text-xs text-ice/60 ml-auto">
-                        {c.file}:{c.line}
+                        {c.file}:line {c.line}
                       </span>
                     </div>
 
@@ -519,9 +584,31 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                     <div className="text-xs text-ice/80 leading-relaxed">{c.message}</div>
 
                     {c.suggestion && (
-                      <pre className="code-block text-mint/90 mt-2">
-                        {c.suggestion.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim()}
-                      </pre>
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[11px] font-mono text-mint">
+                          <span>Suggested Drop-in Patch</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopySuggestion(c.suggestion!, c.id)}
+                            className="btn-ghost text-[11px] py-0.5 px-2.5"
+                          >
+                            {copiedCommentId === c.id ? (
+                              <>
+                                <Check size={11} className="text-mint" />
+                                <span className="text-mint">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={11} />
+                                <span>Copy Fix</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <pre className="code-block text-mint/90">
+                          {c.suggestion.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim()}
+                        </pre>
+                      </div>
                     )}
                   </div>
                 ))

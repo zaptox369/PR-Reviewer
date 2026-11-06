@@ -1,22 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Copy, 
   Check, 
   RefreshCw, 
   Lock, 
-  FileCode, 
-  User, 
-  Clock, 
-  ThumbsUp, 
-  VolumeX, 
-  AlertOctagon,
-  Scale,
   ShieldCheck,
-  ChevronRight,
-  Sparkles
+  ThumbsUp,
+  VolumeX,
+  AlertOctagon
 } from 'lucide-react';
-import { ReviewSummary, ReviewComment, CommentFeedback } from '../types/index.js';
+import { ReviewSummary, CommentFeedback } from '../types/index.js';
 import { submitCommentFeedback } from '../services/api.js';
 
 interface ReviewDetailModalProps {
@@ -30,11 +24,29 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
   onClose, 
   onRerun 
 }) => {
-  if (!review) return null;
-
   const [activeTab, setActiveTab] = useState<'debate' | 'comments' | 'secrets' | 'diff'>('debate');
   const [rerunning, setRerunning] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, CommentFeedback>>({});
+
+  useEffect(() => {
+    if (!review) return;
+    const initial: Record<string, CommentFeedback> = {};
+    for (const c of review.comments) {
+      if (c.feedback) initial[c.id] = c.feedback;
+    }
+    setFeedbackMap(initial);
+  }, [review]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  if (!review) return null;
 
   const isHigh = review.risk === 'high';
   const isMed = review.risk === 'medium';
@@ -50,12 +62,13 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
 
   const handleCopy = (code: string, id: string) => {
     const clean = code.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
-    navigator.clipboard.writeText(clean);
+    void navigator.clipboard.writeText(clean);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleFeedback = async (commentId: string, fb: CommentFeedback) => {
+    setFeedbackMap((prev) => ({ ...prev, [commentId]: fb }));
     try {
       await submitCommentFeedback(review.id, commentId, fb);
       const c = review.comments.find(item => item.id === commentId);
@@ -81,8 +94,12 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/80 backdrop-blur-md"
       role="dialog" 
       aria-modal="true"
+      onClick={onClose}
     >
-      <div className="surface max-w-4xl w-full max-h-[90vh] flex flex-col relative slide-up border-line-bright overflow-hidden">
+      <div
+        className="surface max-w-4xl w-full max-h-[90vh] flex flex-col relative slide-up border-line-bright overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Top Header */}
         <div className="p-5 border-b border-line flex items-center justify-between gap-4 bg-ink">
           <div className="flex items-center gap-3">
@@ -106,7 +123,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
                 </span>
                 <span className="text-xs font-mono text-ice/50">#{review.prNumber}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-ice/60 mt-0.5">
+              <div className="flex items-center gap-2 text-xs text-ice/60 mt-0.5 flex-wrap">
                 <span className="font-mono">{review.repo}</span>
                 <span>•</span>
                 <span>branch <code className="text-white">{review.prBranch}</code></span>
@@ -138,7 +155,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
         </div>
 
         {/* Modal Tabs */}
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-ink/70 border-b border-line">
+        <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 bg-ink/70 border-b border-line">
           <button
             onClick={() => setActiveTab('debate')}
             className={`rounded-full px-4 py-1 text-xs font-semibold transition-all ${
@@ -255,70 +272,82 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
                   Clean pull request! No violations or warnings found.
                 </div>
               ) : (
-                review.comments.map((c) => (
-                  <div key={c.id} className="surface p-4 space-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`badge uppercase text-[10px] ${
-                        c.severity === 'critical' || c.severity === 'high' ? 'risk-high' : c.severity === 'medium' ? 'risk-medium' : 'risk-low'
-                      }`}>
-                        {c.severity}
-                      </span>
-                      <span className="badge bg-white/5 text-ice/80 border-line text-[11px] capitalize">
-                        {c.category}
-                      </span>
-                      <span className="font-mono text-xs text-ice/60 ml-auto">
-                        {c.file}:{c.line}
-                      </span>
-                    </div>
+                review.comments.map((c) => {
+                  const currentFeedback = feedbackMap[c.id] ?? c.feedback;
+                  return (
+                    <div key={c.id} className="surface p-4 space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`badge uppercase text-[10px] ${
+                          c.severity === 'critical' || c.severity === 'high' ? 'risk-high' : c.severity === 'medium' ? 'risk-medium' : 'risk-low'
+                        }`}>
+                          {c.severity}
+                        </span>
+                        <span className="badge bg-white/5 text-ice/80 border-line text-[11px] capitalize">
+                          {c.category}
+                        </span>
+                        <span className="font-mono text-xs text-ice/60 ml-auto">
+                          {c.file}:line {c.line}
+                        </span>
+                      </div>
 
-                    <div className="text-sm font-bold text-white">{c.title}</div>
-                    <div className="text-xs text-ice/85 leading-relaxed">{c.message}</div>
+                      <div className="text-sm font-bold text-white">{c.title}</div>
+                      <div className="text-xs text-ice/85 leading-relaxed">{c.message}</div>
 
-                    {c.suggestion && (
-                      <div className="relative">
-                        <pre className="code-block text-mint/90 pr-16">
-                          {c.suggestion.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim()}
-                        </pre>
+                      {c.suggestion && (
+                        <div className="relative">
+                          <pre className="code-block text-mint/90 pr-20">
+                            {c.suggestion.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim()}
+                          </pre>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(c.suggestion || '', c.id)}
+                            className="absolute top-2 right-2 px-2.5 py-1 text-[11px] rounded bg-white/10 hover:bg-white/20 text-white flex items-center gap-1 border border-line"
+                          >
+                            {copiedId === c.id ? <Check size={11} className="text-mint" /> : <Copy size={11} />}
+                            <span>{copiedId === c.id ? 'Copied' : 'Copy'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-2 text-xs text-ice/60">
+                        <span className="mr-1">Rate AI Finding:</span>
                         <button
                           type="button"
-                          onClick={() => handleCopy(c.suggestion || '', c.id)}
-                          className="absolute top-2 right-2 px-2.5 py-1 text-[11px] rounded bg-white/10 hover:bg-white/20 text-white flex items-center gap-1 border border-line"
+                          onClick={() => void handleFeedback(c.id, 'useful')}
+                          className={`px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1 border transition-colors ${
+                            currentFeedback === 'useful'
+                              ? 'bg-mint/20 text-mint border-mint/40 font-bold'
+                              : 'border-line hover:text-white hover:bg-white/5'
+                          }`}
                         >
-                          {copiedId === c.id ? <Check size={11} className="text-mint" /> : <Copy size={11} />}
-                          <span>{copiedId === c.id ? 'Copied' : 'Copy'}</span>
+                          <ThumbsUp size={11} /> Useful
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleFeedback(c.id, 'noise')}
+                          className={`px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1 border transition-colors ${
+                            currentFeedback === 'noise'
+                              ? 'bg-amber/20 text-amber border-amber/40 font-bold'
+                              : 'border-line hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <VolumeX size={11} /> Noise
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleFeedback(c.id, 'wrong')}
+                          className={`px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1 border transition-colors ${
+                            currentFeedback === 'wrong'
+                              ? 'bg-ember/20 text-ember border-ember/40 font-bold'
+                              : 'border-line hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <AlertOctagon size={11} /> Wrong
                         </button>
                       </div>
-                    )}
-
-                    <div className="flex items-center gap-3 pt-2 text-xs text-ice/60">
-                      <span>Helpful?</span>
-                      <button
-                        onClick={() => handleFeedback(c.id, 'useful')}
-                        className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
-                          c.feedback === 'useful' ? 'bg-mint/20 text-mint font-bold' : 'hover:text-white'
-                        }`}
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={() => handleFeedback(c.id, 'noise')}
-                        className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
-                          c.feedback === 'noise' ? 'bg-amber/20 text-amber font-bold' : 'hover:text-white'
-                        }`}
-                      >
-                        Noisy
-                      </button>
-                      <button
-                        onClick={() => handleFeedback(c.id, 'wrong')}
-                        className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
-                          c.feedback === 'wrong' ? 'bg-ember/20 text-ember font-bold' : 'hover:text-white'
-                        }`}
-                      >
-                        Incorrect
-                      </button>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
@@ -365,7 +394,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
 
         {/* Modal Footer */}
         <div className="p-4 border-t border-line bg-ink flex items-center justify-between text-xs text-ice/60">
-          <span>RevAI v1.0 • SHA: {review.headSha ? review.headSha.slice(0, 7) : 'Verified'}</span>
+          <span>RevAI Gatekeeper • SHA: {review.headSha ? review.headSha.slice(0, 7) : 'Verified'} • Press ESC to close</span>
           <button
             type="button"
             onClick={onClose}

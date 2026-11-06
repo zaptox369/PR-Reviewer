@@ -353,7 +353,7 @@ custom_guidelines: |
     label: 'Pre-Flight Redactor',
     caption: 'How sensitive credentials are scrubbed in-memory before external LLM dispatch',
     code: `// Input Diff Chunk (Intercepted in-memory)
-- const stripe = new Stripe("sk_live_51Nx982AbC99123xyz");
+- const stripe = new Stripe("sk_demo_placeholder_982AbC99123xyz");
 - const dbUrl = "postgres://admin:SuperSecret99!@db.internal:5432/prod";
 - const contact = "vip.customer@enterprise-client.io";
 
@@ -804,7 +804,7 @@ export const OverviewShowcase: React.FC<OverviewShowcaseProps> = ({
                   {`  stripeSecret: "`}
                   <span className={showRawSecrets ? 'text-ember font-bold' : 'text-mint font-bold'}>
                     {showRawSecrets
-                      ? 'sk_live_51Nx982AbC99123xyz'
+                      ? 'sk_demo_placeholder_982AbC99123xyz'
                       : '[REDACTED_SECRET:STRIPE_API_KEY:b4c1]'}
                   </span>
                   {`",`}

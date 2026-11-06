@@ -8,6 +8,7 @@ import { BlastRadiusView } from './components/BlastRadiusView.js';
 import { SecurityAuditView } from './components/SecurityAuditView.js';
 import { RepoSettingsView } from './components/RepoSettingsView.js';
 import { OverviewShowcase } from './components/OverviewShowcase.js';
+import { CommandPalette } from './components/CommandPalette.js';
 import { 
   fetchAuthStatus, 
   fetchReviews, 
@@ -19,7 +20,6 @@ import {
 } from './services/api.js';
 import { ReviewSummary, SystemStats, SecurityAuditEntry, RepoSettings } from './types/index.js';
 import { 
-  GitMerge, 
   Lock, 
   Shield, 
   Zap, 
@@ -27,9 +27,9 @@ import {
   ArrowRight, 
   Share2, 
   Terminal, 
-  RotateCcw,
   Sparkles,
-  Activity
+  Search,
+  X
 } from 'lucide-react';
 
 const pageMeta: Record<Tab, { eyebrow: string; title: string; description: string }> = {
@@ -74,6 +74,9 @@ export function App() {
     return 'overview';
   });
 
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(true);
+
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '') as Tab;
@@ -85,10 +88,24 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // Global Cmd+K / Ctrl+K shortcut for Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     window.location.hash = tab;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   const [selectedShockPreset, setSelectedShockPreset] = useState<string>('sqliAndSecrets');
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [stats, setStats] = useState<SystemStats | null>(null);
@@ -203,7 +220,8 @@ export function App() {
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={handleTabChange} 
-        onOpenSandbox={() => setActiveTab('sandbox')} 
+        onOpenSandbox={() => handleTabChange('sandbox')} 
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         appInstallUrl={appInstallUrl} 
         onSignedOut={handleSignedOut} 
       />
@@ -283,7 +301,7 @@ export function App() {
                   <div className="flex flex-wrap items-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('sandbox')}
+                      onClick={() => handleTabChange('sandbox')}
                       className="btn-primary py-2.5 px-6 font-bold flex items-center gap-2 shadow-lg"
                     >
                       <Terminal size={15} />
@@ -297,6 +315,15 @@ export function App() {
                       <Share2 size={15} />
                       Inspect Blast Radius Map
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommandPaletteOpen(true)}
+                      className="btn-ghost py-2.5 px-4 flex items-center gap-2 text-ice/70"
+                    >
+                      <Search size={14} />
+                      <span>Quick Jump</span>
+                      <kbd className="kbd text-[10px]">⌘K</kbd>
+                    </button>
                   </div>
                 </div>
 
@@ -304,13 +331,13 @@ export function App() {
                 <div className="w-full lg:w-80 p-5 rounded-2xl bg-ink/90 border border-line-bright space-y-3.5 shadow-card">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-ice/60 uppercase tracking-widest">
-                      Quick PR Shocks
+                      1-Click PR Shocks
                     </span>
                     <span className="w-2 h-2 rounded-full bg-ember animate-pulse" />
                   </div>
 
                   <p className="text-xs text-ice/70">
-                    Test how the gatekeeper handles high-consequence failure modes:
+                    Click any scenario to load it directly in the interactive simulator:
                   </p>
 
                   <div className="space-y-2">
@@ -360,6 +387,73 @@ export function App() {
               </div>
             </div>
 
+            {/* Interactive 3-Step Guided Onboarding Bar (Dismissible) */}
+            {showOnboarding && (
+              <div className="surface p-4 md:p-5 border-line-bright bg-ink-soft/90 relative">
+                <button
+                  type="button"
+                  onClick={() => setShowOnboarding(false)}
+                  className="absolute top-3.5 right-3.5 p-1 rounded-full text-ice/50 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Dismiss quick start guide"
+                  aria-label="Dismiss quick start guide"
+                >
+                  <X size={15} />
+                </button>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pr-6">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-ember flex items-center gap-1.5">
+                      <Sparkles size={13} />
+                      New here? Explore RevAI in 3 clicks
+                    </div>
+                    <p className="text-xs text-ice/70">
+                      Experience the entire workflow—from secret scrubbing and multi-agent debate to downstream service impact:
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full lg:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleTriggerShock('sqliAndSecrets')}
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-line text-left transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div>
+                        <div className="text-[10px] font-mono text-ember font-bold">STEP 1</div>
+                        <div className="text-xs font-semibold text-white">Simulate a Shock</div>
+                      </div>
+                      <ArrowRight size={13} className="text-ice/50 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (reviews[0]) setSelectedReview(reviews[0]);
+                        else handleTabChange('reviews');
+                      }}
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-line text-left transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div>
+                        <div className="text-[10px] font-mono text-mint font-bold">STEP 2</div>
+                        <div className="text-xs font-semibold text-white">Inspect PR Verdict</div>
+                      </div>
+                      <ArrowRight size={13} className="text-ice/50 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange('blast')}
+                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-line text-left transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div>
+                        <div className="text-[10px] font-mono text-ultra font-bold">STEP 3</div>
+                        <div className="text-xs font-semibold text-white">Trace Blast Radius</div>
+                      </div>
+                      <ArrowRight size={13} className="text-ice/50 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Pipeline Status */}
             {signedIn && !loadError && (
               <div className="pipeline-status">
@@ -379,7 +473,7 @@ export function App() {
                     <span>Cryptographic HMAC <strong>Verified</strong></span>
                   </div>
                 </div>
-                <button className="status-action" onClick={() => setActiveTab('sandbox')}>
+                <button className="status-action" onClick={() => handleTabChange('sandbox')}>
                   <Zap size={13} /> Try the simulator
                 </button>
               </div>
@@ -570,6 +664,19 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Global Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onSelectTab={handleTabChange}
+        onTriggerShock={handleTriggerShock}
+        onSelectReview={(rev) => {
+          setSelectedReview(rev);
+          setCommandPaletteOpen(false);
+        }}
+        reviews={reviews}
+      />
 
       {/* Review Detail Modal */}
       {signedIn && selectedReview && (
