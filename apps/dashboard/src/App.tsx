@@ -122,12 +122,12 @@ export function App() {
     if (!error) return null;
     window.history.replaceState({}, '', window.location.pathname);
     const messages: Record<string, string> = {
-      not_configured: 'Google sign-in is not set up yet. Configure OAuth credentials on the server, then try again.',
-      cancelled: 'Google sign-in was cancelled.',
+      not_configured: 'OAuth sign-in is not configured on the server yet. Use Email, PAT, or SSO sign-in, or configure OAuth credentials.',
+      cancelled: 'Sign-in was cancelled.',
       invalid_state: 'Sign-in could not be verified. Please try again.',
-      failed: 'Google sign-in failed. Please try again later.',
+      failed: 'Sign-in failed. Please try again later.',
     };
-    return messages[error] ?? 'Google sign-in failed. Please try again.';
+    return messages[error] ?? 'Sign-in failed. Please try again.';
   });
 
   const loadAllData = useCallback(async (showLoading = true) => {
@@ -223,6 +223,10 @@ export function App() {
         onOpenSandbox={() => handleTabChange('sandbox')} 
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         appInstallUrl={appInstallUrl} 
+        onSignedIn={() => {
+          setSignedIn(true);
+          void loadAllData();
+        }}
         onSignedOut={handleSignedOut} 
       />
 
@@ -260,7 +264,7 @@ export function App() {
 
         {authReady && !signedIn && (
           <div className="pipeline-status" role="status">
-            <span>Sign in with Google to view live pull requests, adjust repository policies, and run simulation shocks.</span>
+            <span>Sign in with GitHub, Google, GitLab, Email, PAT, or Enterprise SSO to view live pull requests, adjust repository policies, and run simulation shocks.</span>
           </div>
         )}
 

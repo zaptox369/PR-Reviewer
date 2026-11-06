@@ -8,13 +8,75 @@ const API_BASE = normalizedApiBase
     : `${normalizedApiBase}/api`
   : '/api';
 
+export type AuthProviderName = 'google' | 'github' | 'gitlab' | 'email' | 'token' | 'sso';
+
+export interface AuthUser {
+  id: string;
+  login: string;
+  email?: string;
+  provider?: AuthProviderName;
+  avatarUrl: string;
+}
+
 export interface AuthStatus {
   configured: boolean;
-  user: { id: string; login: string; avatarUrl: string } | null;
+  providers?: {
+    google: boolean;
+    github: boolean;
+    gitlab: boolean;
+    email: boolean;
+    token: boolean;
+    sso: boolean;
+  };
+  user: AuthUser | null;
 }
 
 export function getGoogleSignInUrl(): string {
   return `${API_BASE}/auth/google`;
+}
+
+export function getGithubSignInUrl(): string {
+  return `${API_BASE}/auth/github`;
+}
+
+export function getGitlabSignInUrl(): string {
+  return `${API_BASE}/auth/gitlab`;
+}
+
+export async function signInWithCredentials(payload: {
+  email: string;
+  password?: string;
+  name?: string;
+  provider?: AuthProviderName;
+}): Promise<AuthStatus> {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Sign-in failed');
+  }
+  return res.json();
+}
+
+export async function signInWithToken(payload: {
+  token: string;
+  provider?: 'github' | 'gitlab' | 'token';
+}): Promise<AuthStatus> {
+  const res = await fetch(`${API_BASE}/auth/token`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Token sign-in failed');
+  }
+  return res.json();
 }
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
@@ -32,7 +94,7 @@ export async function signOut(): Promise<void> {
 }
 
 export async function fetchGithubIntegration(): Promise<{ appConfigured: boolean; installationUrl: string | null }> {
-  const res = await fetch(`${API_BASE}/integrations/github`);
+  const res = await fetch(`${API_BASE}/integrations/github`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch GitHub integration status');
   return res.json();
 }
@@ -49,19 +111,22 @@ export async function fetchReviews(params?: {
   if (params?.severity) query.set('severity', params.severity);
   if (params?.search) query.set('search', params.search);
 
-  const res = await fetch(`${API_BASE}/reviews?${query.toString()}`);
+  const res = await fetch(`${API_BASE}/reviews?${query.toString()}`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch reviews');
   return res.json();
 }
 
 export async function fetchReviewById(id: string): Promise<ReviewSummary> {
-  const res = await fetch(`${API_BASE}/reviews/${id}`);
+  const res = await fetch(`${API_BASE}/reviews/${id}`, { credentials: 'include' });
   if (!res.ok) throw new Error('Review not found');
   return res.json();
 }
 
 export async function rerunReview(id: string): Promise<ReviewSummary> {
-  const res = await fetch(`${API_BASE}/reviews/${id}/rerun`, { method: 'POST' });
+  const res = await fetch(`${API_BASE}/reviews/${id}/rerun`, {
+    method: 'POST',
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to re-run review');
   return res.json();
 }
@@ -73,6 +138,7 @@ export async function submitCommentFeedback(
 ): Promise<{ success: boolean; comment: any }> {
   const res = await fetch(`${API_BASE}/reviews/${reviewId}/comments/${commentId}/feedback`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ feedback }),
   });
@@ -90,6 +156,7 @@ export async function simulateReview(payload: {
 }): Promise<ReviewSummary> {
   const res = await fetch(`${API_BASE}/reviews/simulate`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
@@ -101,13 +168,13 @@ export async function simulateReview(payload: {
 }
 
 export async function fetchSampleDiffs(): Promise<Record<string, { title: string; repo: string; diff: string }>> {
-  const res = await fetch(`${API_BASE}/reviews/samples`);
+  const res = await fetch(`${API_BASE}/reviews/samples`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch sample diffs');
   return res.json();
 }
 
 export async function fetchRepos(): Promise<{ repos: RepoSettings[]; count: number }> {
-  const res = await fetch(`${API_BASE}/repos`);
+  const res = await fetch(`${API_BASE}/repos`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch repositories');
   return res.json();
 }
@@ -115,6 +182,7 @@ export async function fetchRepos(): Promise<{ repos: RepoSettings[]; count: numb
 export async function updateRepoSettings(id: string, settings: Partial<RepoSettings>): Promise<RepoSettings> {
   const res = await fetch(`${API_BASE}/repos/${id}/settings`, {
     method: 'PUT',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(settings),
   });
@@ -123,13 +191,13 @@ export async function updateRepoSettings(id: string, settings: Partial<RepoSetti
 }
 
 export async function fetchStats(): Promise<SystemStats> {
-  const res = await fetch(`${API_BASE}/stats`);
+  const res = await fetch(`${API_BASE}/stats`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch system statistics');
   return res.json();
 }
 
 export async function fetchAuditLogs(): Promise<{ logs: SecurityAuditEntry[]; count: number }> {
-  const res = await fetch(`${API_BASE}/audit`);
+  const res = await fetch(`${API_BASE}/audit`, { credentials: 'include' });
   if (!res.ok) throw new Error('Failed to fetch security audit logs');
   return res.json();
 }

@@ -6,6 +6,9 @@ dotenv.config();
 const defaultPublicUrl = process.env.NODE_ENV === 'production'
   ? 'https://revai-service.onrender.com'
   : 'http://localhost:5000';
+const defaultDashboardUrl = process.env.NODE_ENV === 'production'
+  ? defaultPublicUrl
+  : 'http://localhost:5173';
 const defaultAppBaseUrl = process.env.RENDER_EXTERNAL_URL ?? defaultPublicUrl;
 
 const envSchema = z.object({
@@ -21,11 +24,14 @@ const envSchema = z.object({
   GITHUB_OAUTH_CLIENT_SECRET: z.string().optional().default(''),
   GOOGLE_OAUTH_CLIENT_ID: z.string().optional().default(''),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional().default(''),
+  GITLAB_OAUTH_CLIENT_ID: z.string().optional().default(''),
+  GITLAB_OAUTH_CLIENT_SECRET: z.string().optional().default(''),
   AUTH_SESSION_SECRET: z.string().optional().default(''),
   APP_BASE_URL: z.string().url().default(defaultAppBaseUrl),
   GITHUB_OAUTH_CALLBACK_URL: z.string().url().optional(),
   GOOGLE_OAUTH_CALLBACK_URL: z.string().url().optional(),
-  DASHBOARD_URL: z.string().url().default(defaultPublicUrl),
+  GITLAB_OAUTH_CALLBACK_URL: z.string().url().optional(),
+  DASHBOARD_URL: z.string().url().default(defaultDashboardUrl),
   LLM_PROVIDER: z.enum(['openai', 'anthropic', 'gemini', 'ollama', 'heuristic-engine']).default('heuristic-engine'),
   LLM_API_KEY: z.string().optional().default(''),
   GEMINI_API_KEY: z.string().optional().default(''),
