@@ -34,6 +34,11 @@ export default {
           soft: '#d3f1e8',
           deep: '#0e7560',
         },
+        amber: {
+          DEFAULT: '#f59e0b',
+          soft: '#fde68a',
+          deep: '#b45309',
+        },
         line: {
           DEFAULT: 'rgba(255, 255, 255, 0.08)',
           bright: 'rgba(255, 255, 255, 0.18)',

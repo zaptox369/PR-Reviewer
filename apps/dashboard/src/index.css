@@ -160,7 +160,7 @@
 .input-field {
   width: 100%;
   padding: 8px 14px;
-  background: #050507;
+  background: var(--ink);
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--bone);
@@ -172,10 +172,10 @@
 .input-field:focus {
   border-color: rgba(255, 255, 255, 0.35);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
-  background: #08080b;
+  background: var(--ink-soft);
 }
 .input-field::placeholder {
-  color: rgba(212, 212, 216, 0.4);
+  color: rgba(212, 212, 216, 0.45);
 }
 
 /* Buttons */
@@ -340,7 +340,7 @@
 
 /* Code block */
 .code-block {
-  background: #050507;
+  background: var(--ink);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 12px 14px;
@@ -689,15 +689,24 @@
 /* Stats grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Footer */
 .app-footer {
   margin-top: auto;
   border-top: 1px solid var(--line);
-  padding: 24px 28px;
   width: 100%;
   max-width: 1680px;
   margin-left: auto;

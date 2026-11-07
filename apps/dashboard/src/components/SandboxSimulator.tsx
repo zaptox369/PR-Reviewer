@@ -211,8 +211,8 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                   }`}
                 >
                   <span>{p.label}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/70'
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full leading-none ${
+                    isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/75'
                   }`}>
                     {p.tag}
                   </span>
@@ -484,52 +484,58 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* 1. Pragmatist Bull */}
-                <div className="p-5 rounded-2xl bg-[#08080a] border border-mint/25 space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="badge bg-mint/15 text-mint border-mint/30 text-[10px] uppercase font-bold">
-                      Pragmatist Bull
-                    </span>
-                    <span className="text-[11px] text-ice/60">Advocates Velocity</span>
+                <div className="p-5 rounded-2xl bg-ink-soft border border-mint/25 flex flex-col justify-between space-y-3 relative overflow-hidden">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="badge bg-mint/15 text-mint border-mint/30 text-[10px] uppercase font-bold">
+                        Pragmatist Bull
+                      </span>
+                      <span className="text-[11px] text-ice/65">Advocates Velocity</span>
+                    </div>
+                    <h4 className="head text-sm text-white">Finds Opportunity & Flow</h4>
+                    <p className="text-xs text-ice/85 leading-relaxed">
+                      {getBullPerspective()}
+                    </p>
                   </div>
-                  <h4 className="head text-sm text-white">Finds Opportunity & Flow</h4>
-                  <p className="text-xs text-ice/85 leading-relaxed">
-                    {getBullPerspective()}
-                  </p>
-                  <div className="pt-2 border-t border-line text-[11px] text-mint/80 font-mono">
+                  <div className="pt-2 border-t border-line text-[11px] text-mint/85 font-mono">
                     Evidence: diff_readability, test_delta
                   </div>
                 </div>
 
                 {/* 2. Red Team Bear */}
-                <div className="p-5 rounded-2xl bg-[#08080a] border border-ember/30 space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="badge bg-ember/15 text-ember border-ember/40 text-[10px] uppercase font-bold">
-                      Red Team Bear
-                    </span>
-                    <span className="text-[11px] text-ice/60">Attacks the Diff</span>
+                <div className="p-5 rounded-2xl bg-ink-soft border border-ember/30 flex flex-col justify-between space-y-3 relative overflow-hidden">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="badge bg-ember/15 text-ember border-ember/40 text-[10px] uppercase font-bold">
+                        Red Team Bear
+                      </span>
+                      <span className="text-[11px] text-ice/65">Attacks the Diff</span>
+                    </div>
+                    <h4 className="head text-sm text-white">Finds Chaos & Exploit Vectors</h4>
+                    <p className="text-xs text-ice/85 leading-relaxed">
+                      {getBearPerspective()}
+                    </p>
                   </div>
-                  <h4 className="head text-sm text-white">Finds Chaos & Exploit Vectors</h4>
-                  <p className="text-xs text-ice/85 leading-relaxed">
-                    {getBearPerspective()}
-                  </p>
-                  <div className="pt-2 border-t border-line text-[11px] text-ember/80 font-mono">
+                  <div className="pt-2 border-t border-line text-[11px] text-ember/85 font-mono">
                     Evidence: injection_risk, concurrency_hazard
                   </div>
                 </div>
 
                 {/* 3. Risk Auditor */}
-                <div className="p-5 rounded-2xl bg-[#08080a] border border-ultra/40 space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="badge bg-ultra/20 text-ice border-ultra/40 text-[10px] uppercase font-bold">
-                      Security Auditor
-                    </span>
-                    <span className="text-[11px] text-ice/60">Checks Guardrails</span>
+                <div className="p-5 rounded-2xl bg-ink-soft border border-ultra/40 flex flex-col justify-between space-y-3 relative overflow-hidden">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="badge bg-ultra/20 text-ice border-ultra/40 text-[10px] uppercase font-bold">
+                        Security Auditor
+                      </span>
+                      <span className="text-[11px] text-ice/65">Checks Guardrails</span>
+                    </div>
+                    <h4 className="head text-sm text-white">Checks Hidden Blast Radius</h4>
+                    <p className="text-xs text-ice/85 leading-relaxed">
+                      {getAuditorPerspective()}
+                    </p>
                   </div>
-                  <h4 className="head text-sm text-white">Checks Hidden Blast Radius</h4>
-                  <p className="text-xs text-ice/85 leading-relaxed">
-                    {getAuditorPerspective()}
-                  </p>
-                  <div className="pt-2 border-t border-line text-[11px] text-ice/80 font-mono">
+                  <div className="pt-2 border-t border-line text-[11px] text-ice/85 font-mono">
                     Evidence: ast_mapping, credential_scan
                   </div>
                 </div>
@@ -642,8 +648,8 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                 {result.redactedItems && result.redactedItems.length > 0 ? (
                   <div className="space-y-2">
                     {result.redactedItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2.5 rounded bg-black/40 font-mono text-xs border border-line">
-                        <span className="text-ice/70">{item.type}</span>
+                      <div key={idx} className="flex items-center justify-between p-2.5 rounded bg-ink font-mono text-xs border border-line">
+                        <span className="text-ice/75">{item.type}</span>
                         <span className="text-ember font-semibold">{item.placeholder}</span>
                       </div>
                     ))}

@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Settings, 
   Save, 
   Check, 
-  FileText, 
-  Sliders, 
   Shield, 
-  Code2, 
-  AlertTriangle, 
+  ShieldCheck,
+  Bug,
+  Zap,
+  BookOpen,
+  FlaskConical,
   Lock, 
-  Cpu,
-  Layers,
-  Sparkles,
-  ToggleLeft,
-  ToggleRight
+  Layers
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { RepoSettings, Category, Severity } from '../types/index.js';
 import { updateRepoSettings } from '../services/api.js';
 
@@ -23,14 +20,14 @@ interface RepoSettingsViewProps {
   onRefresh: () => void;
 }
 
-const CATEGORIES: { id: Category; label: string; icon: string }[] = [
-  { id: 'security', label: 'Security & Vulnerabilities', icon: '🔒' },
-  { id: 'bug', label: 'Logic & Runtime Bugs', icon: '🐛' },
-  { id: 'performance', label: 'Performance & Latency', icon: '⚡' },
-  { id: 'reliability', label: 'Reliability & Error Handling', icon: '🛡️' },
-  { id: 'readability', label: 'Readability & Clean Code', icon: '📖' },
-  { id: 'testing', label: 'Test Coverage & Assertions', icon: '🧪' },
-  { id: 'architecture', label: 'Design & Architecture', icon: '🏛️' },
+const CATEGORIES: { id: Category; label: string; icon: LucideIcon }[] = [
+  { id: 'security', label: 'Security & Vulnerabilities', icon: Shield },
+  { id: 'bug', label: 'Logic & Runtime Bugs', icon: Bug },
+  { id: 'performance', label: 'Performance & Latency', icon: Zap },
+  { id: 'reliability', label: 'Reliability & Error Handling', icon: ShieldCheck },
+  { id: 'readability', label: 'Readability & Clean Code', icon: BookOpen },
+  { id: 'testing', label: 'Test Coverage & Assertions', icon: FlaskConical },
+  { id: 'architecture', label: 'Design & Architecture', icon: Layers },
 ];
 
 const PROVIDERS = [
@@ -210,6 +207,7 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({ repos, onRef
             <div className="grid grid-cols-1 gap-2">
               {CATEGORIES.map((cat) => {
                 const active = focus.includes(cat.id);
+                const CatIcon = cat.icon;
                 return (
                   <button
                     key={cat.id}
@@ -218,17 +216,17 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({ repos, onRef
                     className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${
                       active
                         ? 'bg-ink-hover border-ultra/50 text-white shadow-sm'
-                        : 'bg-ink/50 border-line text-ice/60 hover:text-ice'
+                        : 'bg-ink-soft border-line text-ice/70 hover:text-white'
                     }`}
                   >
-                    <span className="flex items-center gap-2">
-                      <span>{cat.icon}</span>
+                    <span className="flex items-center gap-2.5">
+                      <CatIcon size={14} className={active ? 'text-ember' : 'text-ice/60'} />
                       <span className="font-semibold">{cat.label}</span>
                     </span>
-                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center ${
                       active ? 'bg-ultra text-white font-bold' : 'border border-line'
                     }`}>
-                      {active ? '✓' : ''}
+                      {active && <Check size={10} />}
                     </span>
                   </button>
                 );

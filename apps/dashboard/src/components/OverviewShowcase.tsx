@@ -281,7 +281,7 @@ const PIPELINE_STEPS = [
     title: 'Advisory Verdict & Quality Loop',
     subtitle: 'Merge-Safe Governance & Telemetry',
     description:
-      'Posts inline markdown fixes as a GitHub COMMENT review—physically restricted from auto-approving or merging code. Developers rate comments (Useful 👍 / Noise 🤫 / Wrong ❌) to tune accuracy.',
+      'Posts inline markdown fixes as a GitHub COMMENT review—physically restricted from auto-approving or merging code. Developers rate comments (Useful / Noise / Wrong) to tune accuracy.',
     tag: 'Advisory Only',
     color: 'mint'
   }
@@ -786,8 +786,8 @@ export const OverviewShowcase: React.FC<OverviewShowcaseProps> = ({
                   <span>src/config/payments.ts</span>
                   <span className={showRawSecrets ? 'text-ember font-bold' : 'text-mint font-bold'}>
                     {showRawSecrets
-                      ? '⚠️ RAW GIT DIFF (INTERNAL MEMORY ONLY)'
-                      : '🔒 SANITIZED PAYLOAD SENT TO LLM'}
+                      ? 'RAW GIT DIFF (INTERNAL MEMORY ONLY)'
+                      : 'SANITIZED PAYLOAD SENT TO LLM'}
                   </span>
                 </div>
                 <div className="font-mono text-ice/85 whitespace-pre overflow-x-auto">
@@ -985,9 +985,9 @@ export const OverviewShowcase: React.FC<OverviewShowcaseProps> = ({
           <p className="text-sm text-ice/75 leading-relaxed">
             Check your review standards into version control alongside your application code, or tune
             thresholds live from the dashboard. Every review comment includes a 1-click developer
-            feedback loop (<strong className="text-white">Useful 👍</strong>,{' '}
-            <strong className="text-white">Noise 🤫</strong>,{' '}
-            <strong className="text-white">Wrong ❌</strong>) to continuously measure signal-to-noise ratio.
+            feedback loop (<strong className="text-white">Useful</strong>,{' '}
+            <strong className="text-white">Noise</strong>,{' '}
+            <strong className="text-white">Wrong</strong>) to continuously measure signal-to-noise ratio.
           </p>
 
           <div className="space-y-2.5 pt-2">
@@ -1067,7 +1067,7 @@ export const OverviewShowcase: React.FC<OverviewShowcaseProps> = ({
             {CODE_TABS[activeCodeTab].caption}
           </div>
 
-          <pre className="p-5 font-mono text-xs text-ice/90 leading-relaxed overflow-x-auto bg-[#050507]">
+          <pre className="p-5 font-mono text-xs text-ice/90 leading-relaxed overflow-x-auto bg-ink">
             <code>{CODE_TABS[activeCodeTab].code}</code>
           </pre>
         </div>
@@ -1087,7 +1087,7 @@ export const OverviewShowcase: React.FC<OverviewShowcaseProps> = ({
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {FAQ_ITEMS.map((item, idx) => {
             const isOpen = openFaqIndex === idx;
             return (

@@ -245,10 +245,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`tab-btn${isActive ? ' active' : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  <Icon size={14} className={isActive ? 'text-white' : 'text-ice/70'} />
+                  <Icon size={14} className={isActive ? 'text-white' : 'text-ice/75'} />
                   <span>{label}</span>
                   {badge && (
-                    <span className="ml-0.5 px-1.5 py-0.2 text-[9px] font-bold rounded-full bg-ember/20 text-ember border border-ember/30 uppercase tracking-wider">
+                    <span className="ml-0.5 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-ember/20 text-ember border border-ember/30 uppercase tracking-wider leading-none">
                       {badge}
                     </span>
                   )}
@@ -264,11 +264,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenCommandPalette}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/12 border border-line text-xs text-ice/80 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-line text-xs text-ice/80 hover:text-white transition-colors"
                 title="Open Quick Command Palette (Ctrl+K / ⌘K)"
               >
-                <Search size={13} className="text-ice/70" />
-                <span className="hidden xl:inline text-ice/60">Quick Jump...</span>
+                <Search size={13} className="text-ice/75" />
+                <span className="hidden xl:inline text-ice/70">Quick Jump...</span>
                 <kbd className="kbd text-[10px] py-0 px-1.5 hidden sm:inline">⌘K</kbd>
               </button>
             )}
@@ -318,7 +318,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                   <span className="account-name font-medium">{auth.user.login}</span>
                   {auth.user.provider && auth.user.id !== 'workspace-operator' && (
-                    <span className="px-1.5 py-0.2 rounded bg-white/10 text-[10px] font-mono text-ice/80">
+                    <span className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono text-ice/85 leading-none">
                       {providerBadgeLabel(auth.user.provider)}
                     </span>
                   )}
@@ -353,7 +353,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="md:hidden p-2 rounded-full bg-white/8 hover:bg-white/15 text-white border border-line"
+              className="md:hidden p-2 rounded-full bg-white/10 hover:bg-white/15 text-white border border-line"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
@@ -592,11 +592,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
 
                 <div className="relative py-2">
-                  <div className=" inset-0 flex items-center">
+                  <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-line" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-ink-card px-2 text-[10px] font-mono uppercase tracking-wider text-ice/50">
+                    <span className="bg-ink-card px-2.5 text-[10px] font-mono uppercase tracking-wider text-ice/65">
                       Or 1-Click Reviewer Persona
                     </span>
                   </div>
@@ -652,28 +652,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             {signInTab === 'email' && (
               <form onSubmit={(e) => void handleEmailSignIn(e)} className="space-y-3">
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Work Email</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Work Email</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="engineer@company.com"
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white focus:outline-none focus:border-white/40"
+                    className="input-field text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Display Handle (optional)</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Display Handle (optional)</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="e.g. alex-sec"
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white focus:outline-none focus:border-white/40"
+                    className="input-field text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Password</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Password</label>
                   <input
                     type="password"
                     required
@@ -681,7 +681,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white focus:outline-none focus:border-white/40"
+                    className="input-field text-xs"
                   />
                 </div>
                 <button
@@ -699,7 +699,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {signInTab === 'token' && (
               <form onSubmit={(e) => void handleTokenSignIn(e)} className="space-y-3">
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Token Provider</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Token Provider</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['github', 'gitlab', 'token'] as const).map((prov) => (
                       <button
@@ -709,7 +709,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         className={`py-1.5 px-2.5 rounded-lg border text-xs font-medium capitalize transition-colors ${
                           tokenProvider === prov
                             ? 'bg-white/15 border-white text-white'
-                            : 'bg-ink border-line text-ice/70 hover:text-white'
+                            : 'bg-ink border-line text-ice/75 hover:text-white'
                         }`}
                       >
                         {prov === 'token' ? 'RevAI Key' : prov}
@@ -718,7 +718,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">
+                  <label className="block text-xs font-medium text-ice/80 mb-1">
                     {tokenProvider === 'github'
                       ? 'GitHub Personal Access Token (ghp_...)'
                       : tokenProvider === 'gitlab'
@@ -738,7 +738,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           ? 'glpat-xxxxxxxxxxxxxxxx'
                           : 'revai_live_xxxxxxxxxxxxxxxx'
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white font-mono focus:outline-none focus:border-white/40"
+                    className="input-field text-xs font-mono"
                   />
                 </div>
                 <button
@@ -756,25 +756,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             {signInTab === 'sso' && (
               <form onSubmit={(e) => void handleSsoSignIn(e)} className="space-y-3">
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Organization Identity Domain</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Organization Identity Domain</label>
                   <input
                     type="text"
                     required
                     value={ssoDomain}
                     onChange={(e) => setSsoDomain(e.target.value)}
                     placeholder="company.okta.com"
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white font-mono focus:outline-none focus:border-white/40"
+                    className="input-field text-xs font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-ice/80 mb-1">Corporate Email</label>
+                  <label className="block text-xs font-medium text-ice/80 mb-1">Corporate Email</label>
                   <input
                     type="email"
                     required
                     value={ssoEmail}
                     onChange={(e) => setSsoEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full px-3 py-2 rounded-xl bg-ink border border-line text-xs text-white focus:outline-none focus:border-white/40"
+                    className="input-field text-xs"
                   />
                 </div>
                 <button

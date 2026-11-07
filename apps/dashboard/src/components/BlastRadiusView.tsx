@@ -108,8 +108,8 @@ export const BlastRadiusView: React.FC = () => {
                 }`}
               >
                 <span>{s.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/70'
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full leading-none ${
+                  isSelected ? 'bg-ink/10 text-ink' : 'bg-white/10 text-ice/75'
                 }`}>
                   {s.category}
                 </span>
