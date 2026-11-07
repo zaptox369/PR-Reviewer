@@ -92,7 +92,7 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
 
   const handleRunSimulation = async () => {
     if (!canRun) {
-      setError('Please sign in with Google to execute a live simulation.');
+      setError('Please sign in to execute a live simulation.');
       return;
     }
     if (!diffText.trim()) {
@@ -459,6 +459,18 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
             >
               Secret Redactions ({result.secretsRedactedCount || 0})
             </button>
+            {result.diffText && (
+              <button
+                onClick={() => setActiveTab('diff')}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === 'diff'
+                    ? 'bg-white text-ink font-bold'
+                    : 'text-ice/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Unified Diff
+              </button>
+            )}
           </div>
 
           {/* Tab 1: The 3 AI Advisors */}
@@ -642,6 +654,15 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Tab 4: Unified Diff */}
+          {activeTab === 'diff' && result.diffText && (
+            <div>
+              <pre className="code-block max-h-96 overflow-y-auto text-xs text-bone">
+                {result.diffText}
+              </pre>
             </div>
           )}
         </div>

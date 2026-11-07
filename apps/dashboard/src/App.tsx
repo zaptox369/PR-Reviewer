@@ -159,12 +159,14 @@ export function App() {
         if (!active) return;
         setSignedIn(Boolean(user));
         setAuthReady(true);
-        if (user) void loadAllData();
-        else setLoading(false);
+        void loadAllData();
       })
       .catch((error: unknown) => {
         console.error('Failed to check sign-in status:', error);
-        if (active) { setAuthReady(true); setLoading(false); }
+        if (active) {
+          setAuthReady(true);
+          void loadAllData();
+        }
       });
     return () => { active = false; };
   }, [loadAllData]);
@@ -193,18 +195,15 @@ export function App() {
   };
 
   const handleReviewCreated = (review: ReviewSummary) => {
-    setReviews((current) => [review, ...current]);
-    void loadAllData();
+    setReviews((current) => [review, ...current.filter((r) => r.id !== review.id)]);
+    void loadAllData(false);
   };
 
   const handleSignedOut = () => {
     setSignedIn(false);
     setLoadError(null);
-    setReviews([]);
-    setStats(null);
-    setAuditLogs([]);
-    setRepos([]);
     setSelectedReview(null);
+    void loadAllData(false);
   };
 
   const handleTriggerShock = (presetId: string) => {
@@ -510,7 +509,7 @@ export function App() {
             loading={loading} 
             onSelectReview={setSelectedReview} 
             onRefresh={() => void loadAllData()} 
-            canRefresh={signedIn} 
+            canRefresh={true} 
           />
         )}
 
@@ -518,7 +517,7 @@ export function App() {
         {activeTab === 'sandbox' && (
           <SandboxSimulator 
             onReviewCreated={handleReviewCreated} 
-            canRun={signedIn} 
+            canRun={true} 
             initialPreset={selectedShockPreset}
           />
         )}
@@ -534,7 +533,7 @@ export function App() {
             logs={auditLogs} 
             loading={loading} 
             onRefresh={() => void loadAllData()} 
-            canRefresh={signedIn} 
+            canRefresh={true} 
           />
         )}
 
@@ -683,7 +682,7 @@ export function App() {
       />
 
       {/* Review Detail Modal */}
-      {signedIn && selectedReview && (
+      {selectedReview && (
         <ReviewDetailModal
           review={selectedReview}
           onClose={() => setSelectedReview(null)}

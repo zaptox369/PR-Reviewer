@@ -441,34 +441,93 @@ export async function simulateReview(payload: {
     });
   } catch {
     const hasSqlInjection = /SELECT\s+.*\+\s*|`\$\{.*\}`/i.test(payload.diffText);
-    const hasSecret = /AKIA[0-9A-Z]{16}|sk_live_[0-9a-zA-Z]{10,}|ghp_[0-9a-zA-Z]{10,}/i.test(payload.diffText);
+    const hasSecret =
+      /AKIA[0-9A-Z]{16}|sk_(?:live|test)_[0-9a-zA-Z_]{10,}|ghp_[0-9a-zA-Z]{10,}|MASTER_API_KEY|JWT_SECRET/i.test(
+        payload.diffText
+      );
+    const hasRaceCondition = /wallet\.balance\s*-\s*amount|balance\s*-\s*\$1|sendPayoutWebhook/i.test(
+      payload.diffText
+    );
+    const hasIdor = /params\.invoiceId|findUnique\(\{\s*where:\s*\{\s*id:\s*req\.params/i.test(
+      payload.diffText
+    );
+    const hasXss = /innerHTML\s*=/i.test(payload.diffText);
     const comments: ReviewSummary['comments'] = [];
     if (hasSqlInjection) {
       comments.push({
         id: `sim-cmt-${Date.now()}-1`,
-        file: 'src/simulated-change.ts',
-        line: 12,
+        file: 'src/auth/login.ts',
+        line: 24,
         severity: 'critical',
         category: 'security',
+        ruleId: 'SEC-SQLI-001',
         title: 'Potential SQL Injection in Dynamic Query',
         message:
           'Raw string interpolation in SQL statements allows arbitrary query manipulation. Use parameterized placeholders (`$1, $2`).',
-        suggestion: 'const result = await db.query("SELECT * FROM users WHERE id = $1", [userId]);',
-        confidence: 0.96,
+        suggestion: 'const result = await db.query("SELECT * FROM users WHERE username = $1", [username]);',
+        confidence: 0.98,
       });
     }
     if (hasSecret) {
       comments.push({
         id: `sim-cmt-${Date.now()}-2`,
-        file: 'src/simulated-change.ts',
-        line: 6,
+        file: 'src/auth/login.ts',
+        line: 21,
         severity: 'critical',
         category: 'security',
+        ruleId: 'SEC-SECRET-002',
         title: 'Hardcoded Cloud Credential Intercepted & Redacted',
         message:
           'Pre-flight scrubber redacted a live credential before model dispatch. Move secrets to environment variables or secret manager.',
         suggestion: 'const apiKey = process.env.SERVICE_API_KEY;',
         confidence: 0.99,
+      });
+    }
+    if (hasRaceCondition) {
+      comments.push({
+        id: `sim-cmt-${Date.now()}-3`,
+        file: 'src/services/ledger.ts',
+        line: 47,
+        severity: 'high',
+        category: 'bug',
+        ruleId: 'CONC-TOCTOU-004',
+        title: 'Non-Atomic Wallet Balance Check-Then-Act (TOCTOU Race)',
+        message:
+          'Reading `wallet.balance` before executing an external webhook and non-atomic `update` allows concurrent requests to double-spend funds.',
+        suggestion:
+          'return db.$transaction(async (tx) => {\n  const res = await tx.wallets.updateMany({ where: { userId, balance: { gte: amount } }, data: { balance: { decrement: amount } } });\n  if (res.count === 0) throw new Error("Insufficient funds");\n});',
+        confidence: 0.95,
+      });
+    }
+    if (hasIdor) {
+      comments.push({
+        id: `sim-cmt-${Date.now()}-4`,
+        file: 'src/routes/invoices.ts',
+        line: 63,
+        severity: 'critical',
+        category: 'security',
+        ruleId: 'SEC-IDOR-007',
+        title: 'Missing Multi-Tenant Scope (IDOR Vulnerability)',
+        message:
+          'Querying `invoices` by `id` alone without scoping to `orgId: req.user.orgId` lets authenticated users read invoices belonging to other tenants.',
+        suggestion:
+          'const invoice = await db.invoices.findFirst({\n  where: { id: req.params.invoiceId, orgId: req.user.orgId },\n});',
+        confidence: 0.97,
+      });
+    }
+    if (hasXss) {
+      comments.push({
+        id: `sim-cmt-${Date.now()}-5`,
+        file: 'src/utils/welcome.ts',
+        line: 13,
+        severity: 'high',
+        category: 'security',
+        ruleId: 'SEC-XSS-003',
+        title: 'DOM Cross-Site Scripting via Unsanitized innerHTML',
+        message:
+          'Assigning concatenated user input to `innerHTML` enables arbitrary script execution in the victim browser.',
+        suggestion: 'document.getElementById("greeting")!.textContent = `Welcome back, ${name}!`;',
+        confidence: 0.94,
       });
     }
     const nowIso = new Date().toISOString();
@@ -484,11 +543,15 @@ export async function simulateReview(payload: {
       createdAt: nowIso,
       updatedAt: nowIso,
       status: 'completed',
-      risk: comments.length > 0 ? 'high' : 'low',
-      score: comments.length > 0 ? 38 : 96,
+      risk: comments.some((c) => c.severity === 'critical')
+        ? 'high'
+        : comments.length > 0
+          ? 'medium'
+          : 'low',
+      score: comments.length > 0 ? Math.max(18, 95 - comments.length * 28) : 96,
       summary:
         comments.length > 0
-          ? `Sandbox simulation detected ${comments.length} high-severity issue(s) across the submitted diff.`
+          ? `Sandbox simulation detected ${comments.length} high-consequence issue(s) across the submitted diff.`
           : 'Sandbox simulation passed all security, concurrency, and architectural gates with zero warnings.',
       keyChanges: ['Evaluated unified diff hunks in Zero-Trust Sandbox simulator'],
       securityConcerns: comments.map((c) => c.title),
@@ -500,6 +563,9 @@ export async function simulateReview(payload: {
       idempotencyKey: `sim-idem-${Date.now()}`,
       diffText: payload.diffText,
       secretsRedactedCount: hasSecret ? 1 : 0,
+      redactedItems: hasSecret
+        ? [{ type: 'API_CREDENTIAL', placeholder: '[REDACTED_SECRET:API_KEY:9f3a]', preview: 'sk_test_***' }]
+        : [],
     };
     FALLBACK_REVIEWS.unshift(simulated);
     return simulated;
@@ -521,12 +587,17 @@ export async function fetchSampleDiffs(): Promise<Record<string, { title: string
       raceCondition: {
         title: 'feat(wallet): process instant withdrawal request',
         repo: 'acme-corp/ledger-core',
-        diff: `--- a/src/ledger/withdraw.ts\n+++ b/src/ledger/withdraw.ts\n@@ -10,4 +10,11 @@\n+export async function withdrawFunds(db: any, walletId: string, amount: number) {\n+  const wallet = await db.query("SELECT balance FROM wallets WHERE id = $1", [walletId]);\n+  if (wallet.balance >= amount) {\n+    await db.query("UPDATE wallets SET balance = balance - $1 WHERE id = $2", [amount, walletId]);\n+  }\n+}`,
+        diff: `--- a/src/ledger/withdraw.ts\n+++ b/src/ledger/withdraw.ts\n@@ -10,4 +10,11 @@\n+export async function withdrawFunds(db: any, walletId: string, amount: number) {\n+  const wallet = await db.query("SELECT balance FROM wallets WHERE id = $1", [walletId]);\n+  if (wallet.balance >= amount) {\n+    await sendPayoutWebhook(walletId, amount);\n+    await db.query("UPDATE wallets SET balance = balance - $1 WHERE id = $2", [amount, walletId]);\n+  }\n+}`,
       },
       authBypass: {
         title: 'feat(invoices): add invoice download endpoint',
         repo: 'acme-corp/billing-api',
-        diff: `--- a/src/routes/invoices.ts\n+++ b/src/routes/invoices.ts\n@@ -4,4 +4,9 @@\n+export async function getInvoice(req: any, res: any, db: any) {\n+  const invoice = await db.query("SELECT * FROM invoices WHERE id = $1", [req.params.invoiceId]);\n+  return res.json(invoice);\n+}`,
+        diff: `--- a/src/routes/invoices.ts\n+++ b/src/routes/invoices.ts\n@@ -4,4 +4,9 @@\n+export async function getInvoice(req: any, res: any, db: any) {\n+  const invoice = await db.invoices.findUnique({ where: { id: req.params.invoiceId } });\n+  return res.json(invoice);\n+}`,
+      },
+      cleanPr: {
+        title: 'refactor(service): clean migration to async/await and robust error handling',
+        repo: 'acme-corp/api-gateway',
+        diff: `--- a/src/services/billing.ts\n+++ b/src/services/billing.ts\n@@ -20,6 +20,14 @@ export async function chargeCustomer(customerId: string, amount: number) {\n+  try {\n+    const charge = await stripe.charges.create({ customer: customerId, amount, currency: 'usd' });\n+    logger.info("Charge succeeded", { chargeId: charge.id });\n+    return charge;\n+  } catch (error) {\n+    logger.error("Charge failed", { customerId, error });\n+    throw new PaymentError("Unable to complete transaction");\n+  }\n }`,
       },
     };
   }

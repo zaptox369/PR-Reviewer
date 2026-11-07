@@ -34,6 +34,9 @@ const EVENT_LABELS: Record<string, { label: string; icon: any }> = {
   webhook_received: { label: 'Webhook Handshake Received', icon: Terminal },
   github_review_posted: { label: 'GitHub Review Comment Posted', icon: CheckCircle2 },
   github_review_failed: { label: 'GitHub Review Failed', icon: ShieldAlert },
+  user_login: { label: 'Operator Session Authenticated', icon: Key },
+  comment_resolved: { label: 'Review Finding Resolved', icon: CheckCircle2 },
+  comment_reply_added: { label: 'Review Discussion Reply Added', icon: Terminal },
 };
 
 export const SecurityAuditView: React.FC<SecurityAuditViewProps> = ({ 

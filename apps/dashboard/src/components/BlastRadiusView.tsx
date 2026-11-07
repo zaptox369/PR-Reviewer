@@ -78,6 +78,7 @@ const SCENARIOS: ShockScenario[] = [
 export const BlastRadiusView: React.FC = () => {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>('sqli');
   const [activeNodeId, setActiveNodeId] = useState<string>('auth');
+  const [guardrailGeneratedFor, setGuardrailGeneratedFor] = useState<string | null>(null);
 
   const currentScenario = SCENARIOS.find((s) => s.id === selectedScenarioId) || SCENARIOS[0];
   const activeNode = currentScenario.nodes.find((n) => n.id === activeNodeId) || currentScenario.nodes[0];
@@ -360,13 +361,21 @@ export const BlastRadiusView: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-line">
+          <div className="pt-4 border-t border-line space-y-2.5">
+            {guardrailGeneratedFor === activeNode.id && (
+              <div className="p-2.5 rounded-xl bg-mint/10 border border-mint/30 text-[11px] text-mint flex items-center gap-2">
+                <CheckCircle2 size={13} className="shrink-0" />
+                <span>
+                  Pre-merge guardrail policy active for <strong>{activeNode.label}</strong>
+                </span>
+              </div>
+            )}
             <button
               type="button"
-              onClick={() => alert(`Pre-merge guardrail simulated for ${activeNode.label}. Safeguard policy generated.`)}
+              onClick={() => setGuardrailGeneratedFor(activeNode.id)}
               className="w-full btn-primary text-xs py-2.5 justify-center font-bold"
             >
-              Generate Guardrail Rule
+              {guardrailGeneratedFor === activeNode.id ? 'Guardrail Policy Active ✓' : 'Generate Guardrail Rule'}
             </button>
           </div>
         </div>

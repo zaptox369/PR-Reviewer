@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Settings, 
   Save, 
@@ -37,7 +37,8 @@ const PROVIDERS = [
   { id: 'gemini', name: 'Google Gemini 2.5 Flash', tag: 'Fastest' },
   { id: 'anthropic', name: 'Anthropic Claude 3.7', tag: 'Reasoning' },
   { id: 'openai', name: 'OpenAI GPT-4o', tag: 'Standard' },
-  { id: 'heuristic-engine', name: 'Local Heuristic Engine', tag: 'Air-gapped' },
+  { id: 'ollama', name: 'Ollama (Local Air-Gapped)', tag: 'Zero Cloud' },
+  { id: 'heuristic-engine', name: 'Local Heuristic Engine', tag: 'Offline' },
 ] as const;
 
 export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({ repos, onRefresh }) => {
@@ -56,6 +57,20 @@ export const RepoSettingsView: React.FC<RepoSettingsViewProps> = ({ repos, onRef
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedRepoId && repos.length > 0) {
+      const first = repos[0];
+      setSelectedRepoId(first.id);
+      setFocus(first.focus);
+      setSeverityThreshold(first.severityThreshold);
+      setMaxComments(first.maxComments);
+      setCustomGuidelines(first.customGuidelines);
+      setAutoReview(first.autoReviewEnabled);
+      setProvider(first.provider || 'heuristic-engine');
+      setStrictPrivacyMode(first.strictPrivacyMode ?? true);
+    }
+  }, [repos, selectedRepoId]);
 
   const handleSelectRepo = (repoId: string) => {
     setSelectedRepoId(repoId);
