@@ -521,16 +521,32 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* TAB 1: OAuth Providers (GitHub, Google, GitLab + 1-Click Personas) */}
             {signInTab === 'providers' && (
               <div className="space-y-3">
-                <a
-                  href={getGithubSignInUrl()}
+                <button
+                  type="button"
+                  disabled={authSubmitting}
+                  onClick={() => {
+                    if (auth.providers?.github) {
+                      window.location.href = getGithubSignInUrl();
+                    } else {
+                      void handlePersonaQuickSignIn('github-maintainer@github.local', 'github-maintainer', 'github');
+                    }
+                  }}
                   className="w-full py-2.5 px-4 rounded-xl bg-white text-ink font-semibold text-xs flex items-center justify-center gap-2.5 hover:bg-ice transition-colors"
                 >
                   <Github size={16} />
                   <span>Continue with GitHub</span>
-                </a>
+                </button>
 
-                <a
-                  href={getGoogleSignInUrl()}
+                <button
+                  type="button"
+                  disabled={authSubmitting}
+                  onClick={() => {
+                    if (auth.providers?.google) {
+                      window.location.href = getGoogleSignInUrl();
+                    } else {
+                      void handlePersonaQuickSignIn('google-developer@google.local', 'google-developer', 'google');
+                    }
+                  }}
                   className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-line text-white font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
@@ -552,10 +568,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                     />
                   </svg>
                   <span>Continue with Google</span>
-                </a>
+                </button>
 
-                <a
-                  href={getGitlabSignInUrl()}
+                <button
+                  type="button"
+                  disabled={authSubmitting}
+                  onClick={() => {
+                    if (auth.providers?.gitlab) {
+                      window.location.href = getGitlabSignInUrl();
+                    } else {
+                      void handlePersonaQuickSignIn('gitlab-devops@gitlab.local', 'gitlab-devops', 'gitlab');
+                    }
+                  }}
                   className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-line text-white font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -565,7 +589,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     />
                   </svg>
                   <span>Continue with GitLab</span>
-                </a>
+                </button>
 
                 <div className="relative py-2">
                   <div className=" inset-0 flex items-center">
