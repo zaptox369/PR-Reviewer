@@ -9,6 +9,7 @@
 [![Stars](https://img.shields.io/github/stars/zaptox369/PR-Reviewer.svg?style=social&label=Stars)](https://github.com/zaptox369/PR-Reviewer/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/zaptox369/PR-Reviewer.svg)](https://github.com/zaptox369/PR-Reviewer/commits/main)
 
+- **Live Production Dashboard (Vercel):** https://ai-pr-reviewer-sigma.vercel.app
 - **GitHub Repository:** https://github.com/zaptox369/PR-Reviewer
 
 ---
@@ -153,19 +154,30 @@ docker compose up --build -d
 
 Access the unified service and dashboard at `http://localhost:5000`.
 
-## 🌐 Deploy the Website and Connect GitHub
+## 🌐 Deploy on Vercel and Connect GitHub
 
-The production Docker image serves the dashboard and API from one origin. Deploy the container to a host that supports Docker and persistent storage for `/app/apps/server/data` (the review database). Configure secrets as environment variables in the host dashboard; do not commit a production `.env` file.
+The repository includes [`vercel.json`](./vercel.json) for instant production deployments on **Vercel**.
 
-If you deploy the dashboard separately on Vercel, deploy `apps/server` to a server-capable host as well. Set the dashboard's `VITE_API_BASE_URL` or `VITE_API_URL` environment variable to the server URL (with or without `/api`, for example, `https://your-server.example.com/api`), then redeploy the dashboard. The dashboard uses same-origin `/api` by default, which is suitable for the unified Docker deployment but not for a static-only Vercel deployment.
+### Deploy the Dashboard on Vercel
 
-### Deploy the server on Render
+1. Import this GitHub repository into **Vercel** or run `npx vercel --prod` from the repository root:
+   ```bash
+   npx vercel --prod
+   ```
+2. Vercel builds `@ai-pr-reviewer/dashboard` (`npm run build --workspace=apps/dashboard`) and serves `apps/dashboard/dist` with SPA routing and built-in offline simulation fallbacks out of the box.
+3. Live Production Deployment: **https://ai-pr-reviewer-sigma.vercel.app**
+4. If you also host `apps/server` externally, set `VITE_API_BASE_URL` or `VITE_API_URL` in your Vercel project environment variables to your backend URL (for example, `https://your-api.vercel.app/api`) and redeploy.
 
-This repository includes a free Render Blueprint in [`render.yaml`](./render.yaml). In Render, create a new Blueprint from this GitHub repository and apply the `revai-service` service. The free service can sleep when idle and has no persistent disk, so data written to the local JSON database can be lost when the service restarts. The built-in sample data is restored automatically. GitHub App credentials are optional for the dashboard and sandbox; add `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, and `GITHUB_PRIVATE_KEY` as private Render environment variables if you want GitHub webhook integration. After deployment, copy the service's public URL and set the dashboard's `VITE_API_URL` in Vercel to that URL, then redeploy the dashboard. The API URL setting must be public and reachable by the browser; do not put secrets in it.
+### Multi-Provider Authentication (GitHub, Google, GitLab, Email, PAT & SSO)
 
-### Enable Google sign-in
+RevAI supports multiple sign-in methods directly from the top navigation bar:
+- **OAuth 2.0 / OIDC Providers:** Continue with **GitHub** (`/api/auth/github`), **Google** (`/api/auth/google`), or **GitLab** (`/api/auth/gitlab`).
+- **Work Email & Password:** Sign in with your email address and password (`POST /api/auth/login`).
+- **Personal Access Token (PAT) / API Key:** Authenticate using a GitHub PAT (`ghp_...` / `github_pat_...`), GitLab PAT (`glpat-...`), or RevAI Operator Key (`POST /api/auth/token`).
+- **Enterprise SSO:** Sign in via SAML / Okta / Entra ID organization domains.
+- **1-Click Reviewer Personas:** Switch instantaneously between **Security** (`sec-hawk`), **Architect** (`principal-arch`), and **SRE Lead** (`staff-sre`) for sandbox testing.
 
-Create a Google OAuth client in Google Cloud Console. Add the Render service URL as an authorized JavaScript origin and `https://YOUR_RENDER_DOMAIN/api/auth/google/callback` as an authorized redirect URI. Set `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` on the Render service and set `DASHBOARD_URL` to the public dashboard URL. `AUTH_SESSION_SECRET` is generated automatically by the Render Blueprint. Sign-in sessions are required for reviews, repository settings, stats, and audit APIs; GitHub webhooks remain available for incoming events. Google profile data is used only to establish the session.
+To configure live OAuth callbacks on your backend server, set `AUTH_SESSION_SECRET` (at least 32 characters), `DASHBOARD_URL` (e.g., `https://ai-pr-reviewer-sigma.vercel.app`), and the corresponding `GITHUB_OAUTH_CLIENT_ID`/`SECRET`, `GOOGLE_OAUTH_CLIENT_ID`/`SECRET`, or `GITLAB_OAUTH_CLIENT_ID`/`SECRET` environment variables.
 
 ### Create a GitHub App
 
@@ -201,7 +213,7 @@ For local container testing, put a unique `GITHUB_WEBHOOK_SECRET` in `.env` and 
 docker compose up --build -d
 ```
 
-For a public deployment, point a domain with HTTPS to the host and set the webhook URL to that public HTTPS address. Configure persistent storage for the database directory so reviews and settings survive container restarts. Configure Google sign-in before sharing the dashboard publicly; review, repository, stats, and audit APIs require an authenticated session.
+For a public deployment, point a domain with HTTPS to the host and set the webhook URL to that public HTTPS address. Configure persistent storage for the database directory so reviews and settings survive container restarts. Configure OAuth, PAT, or SSO authentication before sharing the backend publicly.
 
 ---
 

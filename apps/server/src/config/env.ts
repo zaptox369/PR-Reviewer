@@ -4,12 +4,14 @@ import { z } from 'zod';
 dotenv.config();
 
 const defaultPublicUrl = process.env.NODE_ENV === 'production'
-  ? 'https://revai-service.onrender.com'
+  ? 'https://ai-pr-reviewer-sigma.vercel.app'
   : 'http://localhost:5000';
 const defaultDashboardUrl = process.env.NODE_ENV === 'production'
   ? defaultPublicUrl
   : 'http://localhost:5173';
-const defaultAppBaseUrl = process.env.RENDER_EXTERNAL_URL ?? defaultPublicUrl;
+const defaultAppBaseUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : defaultPublicUrl;
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
