@@ -224,6 +224,7 @@ export function App() {
         appInstallUrl={appInstallUrl} 
         onSignedIn={() => {
           setSignedIn(true);
+          setAuthNotice(null);
           void loadAllData();
         }}
         onSignedOut={handleSignedOut} 

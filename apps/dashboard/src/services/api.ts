@@ -57,12 +57,23 @@ function setLocalSessionUser(user: AuthUser | null): void {
   }
 }
 
+export class ApiValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiValidationError';
+  }
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { credentials: 'include', ...init });
   const contentType = res.headers.get('content-type') || '';
   if (!res.ok || !contentType.includes('application/json')) {
     const err = contentType.includes('application/json') ? await res.json().catch(() => ({})) : {};
-    throw new Error(err.error || `Request failed (${res.status})`);
+    const message = err.error || `Request failed (${res.status})`;
+    if (res.status === 400 && contentType.includes('application/json')) {
+      throw new ApiValidationError(message);
+    }
+    throw new Error(message);
   }
   return res.json() as Promise<T>;
 }
@@ -261,9 +272,27 @@ export async function signInWithCredentials(payload: {
   password?: string;
   name?: string;
   provider?: AuthProviderName;
+  ssoDomain?: string;
 }): Promise<AuthStatus> {
-  const normalizedEmail = payload.email.trim().toLowerCase();
+  const normalizedEmail = (payload.email || '').trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+    throw new ApiValidationError('Please enter a valid email address (e.g. name@company.com).');
+  }
+
   const provider: AuthProviderName = payload.provider || 'email';
+  if (provider === 'email' && (!payload.password || payload.password.trim().length < 4)) {
+    throw new ApiValidationError('Password must be at least 4 characters.');
+  }
+
+  if (provider === 'sso' && payload.ssoDomain !== undefined) {
+    const domain = payload.ssoDomain.trim().toLowerCase();
+    const domainRegex = /^([a-z0-9-]+\.)+[a-z]{2,}$/;
+    if (!domain || !domainRegex.test(domain)) {
+      throw new ApiValidationError('Please enter a valid SSO organization domain (e.g. company.okta.com).');
+    }
+  }
+
   const fallbackUser: AuthUser = {
     id: `${provider}:${normalizedEmail}`,
     login: (payload.name || normalizedEmail.split('@')[0] || 'developer').trim(),
@@ -280,7 +309,8 @@ export async function signInWithCredentials(payload: {
     });
     if (status.user) setLocalSessionUser(status.user);
     return status;
-  } catch {
+  } catch (err) {
+    if (err instanceof ApiValidationError) throw err;
     setLocalSessionUser(fallbackUser);
     return {
       configured: true,
@@ -294,7 +324,12 @@ export async function signInWithToken(payload: {
   token: string;
   provider?: 'github' | 'gitlab' | 'token';
 }): Promise<AuthStatus> {
-  const trimmed = payload.token.trim();
+  const trimmed = (payload.token || '').trim();
+  if (!trimmed || trimmed.length < 8 || /\s/.test(trimmed)) {
+    throw new ApiValidationError(
+      'Please enter a valid Personal Access Token or API Key (min 8 characters, no spaces).'
+    );
+  }
   const provider: AuthProviderName = payload.provider || 'token';
   const suffix = trimmed.slice(-4) || 'dev';
   const fallbackUser: AuthUser = {
@@ -308,11 +343,12 @@ export async function signInWithToken(payload: {
     const status = await fetchJson<AuthStatus>(`${API_BASE}/auth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, token: trimmed }),
     });
     if (status.user) setLocalSessionUser(status.user);
     return status;
-  } catch {
+  } catch (err) {
+    if (err instanceof ApiValidationError) throw err;
     setLocalSessionUser(fallbackUser);
     return {
       configured: true,
@@ -327,6 +363,13 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
   try {
     const status = await fetchJson<AuthStatus>(`${API_BASE}/auth/status`);
     if (status.user) {
+      if (
+        status.user.id === 'workspace-operator' &&
+        cachedUser &&
+        cachedUser.id !== 'workspace-operator'
+      ) {
+        return { ...status, configured: true, user: cachedUser };
+      }
       setLocalSessionUser(status.user);
       return status;
     }
@@ -433,13 +476,17 @@ export async function simulateReview(payload: {
   prBranch: string;
   diffText: string;
 }): Promise<ReviewSummary> {
+  if (!payload.diffText || payload.diffText.trim().length < 10) {
+    throw new ApiValidationError('Diff must be at least 10 characters.');
+  }
   try {
     return await fetchJson<ReviewSummary>(`${API_BASE}/reviews/simulate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof ApiValidationError) throw err;
     const hasSqlInjection = /SELECT\s+.*\+\s*|`\$\{.*\}`/i.test(payload.diffText);
     const hasSecret =
       /AKIA[0-9A-Z]{16}|sk_(?:live|test)_[0-9a-zA-Z_]{10,}|ghp_[0-9a-zA-Z]{10,}|MASTER_API_KEY|JWT_SECRET/i.test(

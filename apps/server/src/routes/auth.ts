@@ -65,6 +65,17 @@ function anyOAuthConfigured(): boolean {
   return githubOAuthConfigured() || googleOAuthConfigured() || gitlabOAuthConfigured();
 }
 
+function getProvidersStatus() {
+  return {
+    google: googleOAuthConfigured(),
+    github: githubOAuthConfigured(),
+    gitlab: gitlabOAuthConfigured(),
+    email: true,
+    token: true,
+    sso: true,
+  };
+}
+
 function cookieOptions(maxAge: number, path: string, sameSite: 'Lax' | 'None' = 'Lax'): string {
   const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
   return `Path=${path}; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${secure}`;
@@ -152,14 +163,7 @@ export function requireSession(req: Request, res: Response, next: NextFunction):
 }
 
 authRouter.get('/status', (req: Request, res: Response) => {
-  const providers = {
-    google: googleOAuthConfigured(),
-    github: githubOAuthConfigured(),
-    gitlab: gitlabOAuthConfigured(),
-    email: true,
-    token: true,
-    sso: true,
-  };
+  const providers = getProvidersStatus();
 
   const session = verifyToken(readCookie(req, SESSION_COOKIE));
   if (
@@ -212,7 +216,7 @@ authRouter.get('/status', (req: Request, res: Response) => {
 
 // Email & Password / SSO / Dev Provider Sign-In
 authRouter.post('/login', (req: Request, res: Response) => {
-  const { email, password, name, provider } = req.body as {
+  const { email, password, name, provider } = (req.body || {}) as {
     email?: string;
     password?: string;
     name?: string;
@@ -220,8 +224,9 @@ authRouter.post('/login', (req: Request, res: Response) => {
   };
 
   const normalizedEmail = (email || '').trim().toLowerCase();
-  if (!normalizedEmail || !normalizedEmail.includes('@')) {
-    res.status(400).json({ error: 'Please enter a valid email address.' });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+    res.status(400).json({ error: 'Please enter a valid email address (e.g. name@company.com).' });
     return;
   }
 
@@ -230,7 +235,7 @@ authRouter.post('/login', (req: Request, res: Response) => {
       ? provider
       : 'email';
 
-  if (selectedProvider === 'email' && (!password || password.length < 4)) {
+  if (selectedProvider === 'email' && (!password || password.trim().length < 4)) {
     res.status(400).json({ error: 'Password must be at least 4 characters.' });
     return;
   }
@@ -247,19 +252,19 @@ authRouter.post('/login', (req: Request, res: Response) => {
   };
 
   setSessionCookie(res, user);
-  res.json({ configured: true, user });
+  res.json({ configured: true, providers: getProvidersStatus(), user });
 });
 
 // Personal Access Token (GitHub / GitLab PAT) or API Key Sign-In
 authRouter.post('/token', async (req: Request, res: Response) => {
-  const { token, provider } = req.body as {
+  const { token, provider } = (req.body || {}) as {
     token?: string;
     provider?: 'github' | 'gitlab' | 'token';
   };
 
   const trimmed = (token || '').trim();
-  if (!trimmed || trimmed.length < 8) {
-    res.status(400).json({ error: 'Please enter a valid Personal Access Token or API Key (min 8 chars).' });
+  if (!trimmed || trimmed.length < 8 || /\s/.test(trimmed)) {
+    res.status(400).json({ error: 'Please enter a valid Personal Access Token or API Key (min 8 chars, no spaces).' });
     return;
   }
 
@@ -291,7 +296,7 @@ authRouter.post('/token', async (req: Request, res: Response) => {
             avatarUrl: profile.avatar_url || '',
           };
           setSessionCookie(res, user);
-          res.json({ configured: true, user });
+          res.json({ configured: true, providers: getProvidersStatus(), user });
           return;
         }
       }
@@ -309,7 +314,7 @@ authRouter.post('/token', async (req: Request, res: Response) => {
   };
 
   setSessionCookie(res, user);
-  res.json({ configured: true, user });
+  res.json({ configured: true, providers: getProvidersStatus(), user });
 });
 
 // Google OAuth

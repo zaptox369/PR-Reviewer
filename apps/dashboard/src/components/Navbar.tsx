@@ -92,10 +92,23 @@ export const Navbar: React.FC<NavbarProps> = ({
       .catch((error: unknown) => console.error('Failed to load sign-in status:', error));
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowSignInModal(false);
+        setShowGithubGuide(false);
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSignOut = async () => {
     try {
       await signOut();
       setAuth((current) => ({ ...current, configured: true, user: null }));
+      setShowSignInModal(false);
       onSignedOut?.();
     } catch (error) {
       console.error('Failed to sign out:', error);
@@ -103,13 +116,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const completeSignIn = (status: AuthStatus) => {
-    setAuth(status);
+    setAuth((prev) => ({
+      ...prev,
+      ...status,
+      providers: status.providers ?? prev.providers,
+    }));
     setShowSignInModal(false);
     setAuthFormError(null);
     setEmail('');
     setPassword('');
     setDisplayName('');
     setAccessToken('');
+    setSsoEmail('');
     if (status.user) {
       onSignedIn?.(status.user);
     }
@@ -160,6 +178,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         email: ssoEmail,
         name: ssoEmail.split('@')[0],
         provider: 'sso',
+        ssoDomain,
       });
       completeSignIn(status);
     } catch (err: any) {
@@ -376,7 +395,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setMobileMenuOpen(false);
                 }}
                 className={`w-full px-4 py-2.5 rounded-xl text-left text-xs font-semibold flex items-center justify-between transition-colors ${
-                  isActive ? 'bg-white text-ink font-bold' : 'text-ice hover:bg-white/8'
+                  isActive ? 'bg-white text-ink font-bold' : 'text-ice hover:bg-white/10'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
@@ -451,6 +470,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </p>
               </div>
             </div>
+
+            {auth.user && (
+              <div className="mb-4 p-2.5 rounded-xl bg-white/5 border border-line flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-mint shrink-0" />
+                  <span className="text-ice/70 truncate">
+                    Active: <strong className="text-white">{auth.user.login}</strong>
+                  </span>
+                  {auth.user.provider && (
+                    <span className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono text-ice/80 leading-none shrink-0">
+                      {providerBadgeLabel(auth.user.provider)}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleSignOut()}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ember/15 hover:bg-ember/25 text-ember border border-ember/30 font-semibold text-[11px] shrink-0 transition-colors"
+                >
+                  <LogOut size={11} />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
 
             {/* Method Selector Tabs */}
             <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-ink/80 border border-line mb-4 text-xs">

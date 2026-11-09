@@ -95,8 +95,8 @@ export const SandboxSimulator: React.FC<SandboxSimulatorProps> = ({
       setError('Please sign in to execute a live simulation.');
       return;
     }
-    if (!diffText.trim()) {
-      setError('Please provide a unified git diff.');
+    if (diffText.trim().length < 10) {
+      setError('Please provide a unified git diff (at least 10 characters).');
       return;
     }
 
